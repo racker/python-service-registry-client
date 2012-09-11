@@ -35,8 +35,12 @@ class BaseClient(object):
 
     def request(self, method, path, options=None,
                 payload=None, heartbeater=None):
-        request_url = self.base_url + path
+        tenant_id = self.auth_headers['X-Tenant-Id']
+        request_url = self.base_url + tenant_id + path
         if method == 'GET':
+            print request_url
+            print self.auth_headers
+            print options
             r = requests.get(request_url, headers=self.auth_headers, params=options)
             return r.json
 #        elif method == 'POST':
