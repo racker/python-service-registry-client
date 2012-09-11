@@ -198,7 +198,3 @@ class Client(object):
         except (InvalidCredsError, MalformedResponseError):
             raise Exception('The username or password you entered is ' +
                             'incorrect. Please try again.')
-
-
-c = Client('shawnps', 'b9fc192f142495902031de738a36edcb')
-print c.sessions.list()
