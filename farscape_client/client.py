@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from copy import deepcopy
+
 import libcloud.security
+from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
+import requests
 
 libcloud.security.VERIFY_SSL_CERT = False
 
@@ -28,6 +32,14 @@ class BaseClient(object):
     def __init__(self, base_url, auth_headers):
         self.base_url = base_url
         self.auth_headers = auth_headers
+
+    def request(self, method, path, options=None,
+                payload=None, heartbeater=None):
+        request_url = self.base_url + path
+        if method == 'GET':
+            r = requests.get(request_url, headers=self.auth_headers, params=options)
+            return r.json
+#        elif method == 'POST':
 
 
 class SessionsClient(BaseClient):
@@ -59,7 +71,7 @@ class SessionsClient(BaseClient):
 
 class EventsClient(BaseClient):
     def __init__(self, base_url, auth_headers):
-        super(EventsClient, self).__init__(agent, baseUrl)
+        super(EventsClient, self).__init__(base_url, auth_headers)
         self.events_path = '/events'
 
     def list(self, marker=None):
@@ -165,11 +177,11 @@ class Client(object):
         self.api_key = api_key
         self.auth_headers = self._authenticate()
         self.base_url = base_url
-        self.sessions = SessionsClient(self.baseUrl, self.auth_headers)
-        #self.events = EventsClient(self.baseUrl)
-        #self.services = ServicesClient(self.baseUrl)
-        #self.configuration = ConfigurationClient(self.baseUrl)
-        #self.account = AccountClient(self.baseUrl)
+        self.sessions = SessionsClient(self.base_url, self.auth_headers)
+        #self.events = EventsClient(self.base_url)
+        #self.services = ServicesClient(self.base_url)
+        #self.configuration = ConfigurationClient(self.base_url)
+        #self.account = AccountClient(self.base_url)
 
     def _authenticate(self):
         try:
@@ -179,10 +191,10 @@ class Client(object):
             tenant_id = driver.connection.request_path.split('/')[-1]
             return {'X-Auth-Token': auth_token,
                     'X-Tenant-Id': tenant_id}
-        except InvalidCredsError, MalformedResponseError:
+        except (InvalidCredsError, MalformedResponseError):
             raise Exception('The username or password you entered is ' +
                             'incorrect. Please try again.')
 
 
 c = Client('shawnps', 'b9fc192f142495902031de738a36edcb')
-print c.__dict__
+print c.sessions.list()
