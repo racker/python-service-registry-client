@@ -96,6 +96,8 @@ class SessionsClient(BaseClient):
         super(SessionsClient, self).__init__(base_url, username, api_key)
         self.sessions_path = '/sessions'
         self.base_url = base_url
+        self.username = username
+        self.api_key = api_key
 
     def create(self, heartbeat_timeout, payload=None):
         path = self.sessions_path
@@ -103,7 +105,8 @@ class SessionsClient(BaseClient):
         payload['heartbeat_timeout'] = heartbeat_timeout
 
         heartbeater = HeartBeater(self.base_url,
-                                  None,
+                                  self.username,
+                                  self.api_key,
                                   None,
                                   heartbeat_timeout)
 
@@ -226,6 +229,10 @@ class HeartBeater(BaseClient):
 
         @param base_url:  The base Cloud Registry URL.
         @type base_url: C{str}
+        @param username: Rackspace username.
+        @type username: C{str}
+        @param api_key: Rackspace API key.
+        @type api_key: C{str}
         @param session_id: The ID of the session to heartbeat.
         @type session_id: C{str}
         @param heartbeat_timeout: The amount of time after which a session will
