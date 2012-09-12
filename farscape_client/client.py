@@ -18,6 +18,7 @@ try:
 except:
         import json
 
+from datetime import datetime
 import libcloud.security
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
@@ -35,15 +36,19 @@ DEFAULT_API_URL = 'http://fs-staging.k1k.me/v1.0/'
 
 
 class BaseClient(object):
-    def __init__(self, base_url, auth_headers):
+    def __init__(self, base_url, username, api_key):
         self.base_url = base_url
-        self.auth_headers = auth_headers
+        self.username = username
+        self.api_key = api_key
+        self.auth_headers = None
+        self.auth_token_expires = None
 
     def get_id_from_url(self, url):
         return url.split('/')[-1]
 
     def request(self, method, path, options=None,
                 payload=None, heartbeater=None):
+        self.auth_headers = self._authenticate()
         tenant_id = self.auth_headers['X-Tenant-Id']
         request_url = self.base_url + tenant_id + path
         if method == 'GET':
@@ -68,13 +73,29 @@ class BaseClient(object):
 
             return r.json, id_from_url, heartbeater
 
+    def _authenticate(self):
+        if self.auth_headers:
+            if self.auth_token_expires and \
+                    self.auth_token_expires < datetime.now():
+                        return self.auth_headers
+        try:
+            driver = RackspaceNodeDriver(self.username, self.api_key)
+            driver.connection._populate_hosts_and_request_paths()
+            auth_token = driver.connection.auth_token
+            tenant_id = driver.connection.request_path.split('/')[-1]
+            self.auth_token_expires = driver.connection.auth_token_expires
+            return {'X-Auth-Token': auth_token,
+                    'X-Tenant-Id': tenant_id}
+        except (InvalidCredsError, MalformedResponseError):
+            raise Exception('The username or password you entered is ' +
+                            'incorrect. Please try again.')
+
 
 class SessionsClient(BaseClient):
-    def __init__(self, base_url, auth_headers):
-        super(SessionsClient, self).__init__(base_url, auth_headers)
+    def __init__(self, base_url, username, api_key):
+        super(SessionsClient, self).__init__(base_url, username, api_key)
         self.sessions_path = '/sessions'
         self.base_url = base_url
-        self.auth_headers = auth_headers
 
     def create(self, heartbeat_timeout, payload=None):
         path = self.sessions_path
@@ -82,7 +103,7 @@ class SessionsClient(BaseClient):
         payload['heartbeat_timeout'] = heartbeat_timeout
 
         heartbeater = HeartBeater(self.base_url,
-                                  self.auth_headers,
+                                  None,
                                   None,
                                   heartbeat_timeout)
 
@@ -114,8 +135,8 @@ class SessionsClient(BaseClient):
 
 
 class EventsClient(BaseClient):
-    def __init__(self, base_url, auth_headers):
-        super(EventsClient, self).__init__(base_url, auth_headers)
+    def __init__(self, base_url, username, api_key):
+        super(EventsClient, self).__init__(base_url, username, api_key)
         self.events_path = '/events'
 
     def list(self, marker=None):
@@ -127,8 +148,8 @@ class EventsClient(BaseClient):
 
 
 class ServicesClient(BaseClient):
-    def __init__(self, base_url, auth_headers):
-        super(ServicesClient, self).__init__(base_url, auth_headers)
+    def __init__(self, base_url, username, api_key):
+        super(ServicesClient, self).__init__(base_url, username, api_key)
         self.services_path = '/services'
 
     def list(self):
@@ -163,8 +184,8 @@ class ServicesClient(BaseClient):
 
 
 class ConfigurationClient(BaseClient):
-    def __init__(self, base_url, auth_headers):
-        super(ConfigurationClient, self).__init__(base_url, auth_headers)
+    def __init__(self, base_url, username, api_key):
+        super(ConfigurationClient, self).__init__(base_url, username, api_key)
         self.configuration_path = '/configuration'
 
     def list(self):
@@ -188,8 +209,8 @@ class ConfigurationClient(BaseClient):
 
 
 class AccountClient(BaseClient):
-    def __init__(self, base_url, auth_headers):
-        super(AccountClient, self).__init__(base_url, auth_headers)
+    def __init__(self, base_url, username, api_key):
+        super(AccountClient, self).__init__(base_url, username, api_key)
         self.limits_path = '/limits'
 
     def get_limits(self):
@@ -197,7 +218,8 @@ class AccountClient(BaseClient):
 
 
 class HeartBeater(BaseClient):
-    def __init__(self, base_url, auth_headers, session_id, heartbeat_timeout):
+    def __init__(self, base_url, username, api_key,
+                 session_id, heartbeat_timeout):
         """
         HeartBeater will start heartbeating a session once start() is called,
         and stop heartbeating the session when stop() is called.
@@ -210,7 +232,7 @@ class HeartBeater(BaseClient):
         time out if a heartbeat is not received.
         @type heartbeat_timeout: C{int}
         """
-        super(HeartBeater, self).__init__(base_url, auth_headers)
+        super(HeartBeater, self).__init__(base_url, username, api_key)
         self.session_id = session_id
         self.heartbeat_timeout = heartbeat_timeout
         self.heartbeat_interval = self._calculate_interval(heartbeat_timeout)
@@ -280,23 +302,13 @@ class Client(object):
 
         self.username = username
         self.api_key = api_key
-        self.auth_headers = self._authenticate()
         self.base_url = base_url
-        self.sessions = SessionsClient(self.base_url, self.auth_headers)
-        self.events = EventsClient(self.base_url, self.auth_headers)
-        self.services = ServicesClient(self.base_url, self.auth_headers)
+        self.sessions = SessionsClient(self.base_url, self.username,
+                                       self.api_key)
+        self.events = EventsClient(self.base_url, self.username, self.api_key)
+        self.services = ServicesClient(self.base_url, self.username,
+                                       self.api_key)
         self.configuration = ConfigurationClient(self.base_url,
-                                                 self.auth_headers)
-        self.account = AccountClient(self.base_url, self.auth_headers)
-
-    def _authenticate(self):
-        try:
-            driver = RackspaceNodeDriver(self.username, self.api_key)
-            driver.connection._populate_hosts_and_request_paths()
-            auth_token = driver.connection.auth_token
-            tenant_id = driver.connection.request_path.split('/')[-1]
-            return {'X-Auth-Token': auth_token,
-                    'X-Tenant-Id': tenant_id}
-        except (InvalidCredsError, MalformedResponseError):
-            raise Exception('The username or password you entered is ' +
-                            'incorrect. Please try again.')
+                                                 self.username, self.api_key)
+        self.account = AccountClient(self.base_url, self.username,
+                                     self.api_key)
