@@ -19,6 +19,7 @@ except:
         import json
 
 from datetime import datetime
+from dateutil import parser
 import libcloud.security
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
@@ -94,7 +95,8 @@ class BaseClient(object):
             driver.connection._populate_hosts_and_request_paths()
             auth_token = driver.connection.auth_token
             tenant_id = driver.connection.request_path.split('/')[-1]
-            self.auth_token_expires = driver.connection.auth_token_expires
+            expires = driver.connection.auth_token_expires
+            self.auth_token_expires = parser.parse(expires)
             return {'X-Auth-Token': auth_token,
                     'X-Tenant-Id': tenant_id}
         except (InvalidCredsError, MalformedResponseError):
