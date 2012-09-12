@@ -13,6 +13,10 @@
 # limitations under the License.
 
 from copy import deepcopy
+try:
+        import simplejson as json
+except:
+        import json
 
 import libcloud.security
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
@@ -25,7 +29,7 @@ US_AUTH_URL = 'https://identity.api.rackspacecloud.com/v2.0/tokens'
 UK_AUTH_URL = 'https://lon.identity.api.rackspacecloud.com/v2.0/tokens'
 DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
                      'uk': UK_AUTH_URL}
-DEFAULT_API_URL = 'https://fs-staging.k1k.me/v1.0/'
+DEFAULT_API_URL = 'http://fs-staging.k1k.me/v1.0/'
 
 
 class BaseClient(object):
@@ -38,18 +42,36 @@ class BaseClient(object):
         tenant_id = self.auth_headers['X-Tenant-Id']
         request_url = self.base_url + tenant_id + path
         if method == 'GET':
-            print request_url
-            print self.auth_headers
-            print options
             r = requests.get(request_url, headers=self.auth_headers, params=options)
             return r.json
-#        elif method == 'POST':
+        elif method == 'POST':
+            r = requests.post(request_url, headers=self.auth_headers,
+                              data=json.dumps(payload))
+            return r.json
 
 
 class SessionsClient(BaseClient):
     def __init__(self, base_url, auth_headers):
         super(SessionsClient, self).__init__(base_url, auth_headers)
         self.sessions_path = '/sessions'
+
+    def create(self, heartbeat_timeout, payload=None):
+        path = self.sessions_path
+        payload = deepcopy(payload) if payload else {}
+        payload['heartbeat_timeout'] = heartbeat_timeout
+
+        return self.request('POST', path, payload=payload)
+
+        # TODO
+        #heartbeater = HeartBeater(self.agent,
+        #                          self.base_url,
+        #                          None,
+        #                          heartbeat_timeout)
+
+        #return self.request('POST',
+        #                    path,
+        #                    payload=payload,
+        #                    heartbeater=heartbeater)
 
     def list(self):
         path = self.sessions_path
