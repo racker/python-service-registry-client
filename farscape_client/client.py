@@ -37,17 +37,31 @@ class BaseClient(object):
         self.base_url = base_url
         self.auth_headers = auth_headers
 
+    def get_id_from_url(self, url):
+        return url.split('/')[-1]
+
     def request(self, method, path, options=None,
                 payload=None, heartbeater=None):
         tenant_id = self.auth_headers['X-Tenant-Id']
         request_url = self.base_url + tenant_id + path
         if method == 'GET':
-            r = requests.get(request_url, headers=self.auth_headers, params=options)
+            r = requests.get(request_url,
+                             headers=self.auth_headers,
+                             params=options)
             return r.json
         elif method == 'POST':
             r = requests.post(request_url, headers=self.auth_headers,
                               data=json.dumps(payload))
-            return r.json
+
+            if 'heartbeat' in path:
+                return r.json
+
+            id_from_url = self.get_id_from_url(r.headers['location'])
+
+            if 'services' in path:
+                return id_from_url
+
+            return r.json, id_from_url
 
 
 class SessionsClient(BaseClient):
