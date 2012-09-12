@@ -1,0 +1,14 @@
+{
+    "id": "dfw1-messenger",
+    "session_id": "sessionId",
+    "tags": [
+        "tag1",
+        "tag2",
+        "tag3"
+    ],
+    "metadata": {
+        "region": "dfw",
+        "port": "5757",
+        "ip": "127.0.0.1"
+    }
+}

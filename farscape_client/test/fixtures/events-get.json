@@ -1,0 +1,38 @@
+{
+    "values": [
+        {
+            "id": "ba789040-f785-11e1-8b3a-29ab16ce9cad",
+            "timestamp": 1346868952900,
+            "type": "service.join",
+            "payload": {
+                "service_id": "dfw1-messenger",
+                "session_id": "sessionId"
+            }
+        },
+        {
+            "id": "ba8ba310-f785-11e1-8b3a-29ab16ce9cad",
+            "timestamp": 1346868953025,
+            "type": "service.join",
+            "payload": {
+                "service_id": "dfw1-api",
+                "session_id": "sessionId"
+            }
+        },
+        {
+            "id": "bab80a40-f785-11e1-8b3a-29ab16ce9cad",
+            "timestamp": 1346868953316,
+            "type": "configuration_value.update",
+            "payload": {
+                "old_value": null,
+                "new_value": "test value 123456",
+                "configuration_value_id": "configId"
+            }
+        }
+    ],
+    "metadata": {
+        "count": 3,
+        "limit": 100,
+        "marker": null,
+        "next_href": null
+    }
+}
