@@ -36,12 +36,20 @@ DEFAULT_API_URL = 'http://fs-staging.k1k.me/v1.0/'
 
 
 class BaseClient(object):
-    def __init__(self, base_url, username, api_key):
+    def __init__(self, base_url, username, api_key, region):
         self.base_url = base_url
         self.username = username
         self.api_key = api_key
         self.auth_headers = None
         self.auth_token_expires = None
+        self.region = region
+
+        auth_url = DEFAULT_AUTH_URLS.get(region, 'us')
+
+        if not auth_url.endswith('/'):
+            auth_url += '/'
+
+        self.auth_url = auth_url
 
     def get_id_from_url(self, url):
         return url.split('/')[-1]
@@ -79,7 +87,10 @@ class BaseClient(object):
                     self.auth_token_expires < datetime.now():
                         return self.auth_headers
         try:
-            driver = RackspaceNodeDriver(self.username, self.api_key)
+            driver = RackspaceNodeDriver(self.username, self.api_key,
+                                         ex_force_auth_url=self.auth_url,
+                                         ex_force_version='2.0',
+                                         ex_force_service_region=self.region)
             driver.connection._populate_hosts_and_request_paths()
             auth_token = driver.connection.auth_token
             tenant_id = driver.connection.request_path.split('/')[-1]
@@ -92,12 +103,14 @@ class BaseClient(object):
 
 
 class SessionsClient(BaseClient):
-    def __init__(self, base_url, username, api_key):
-        super(SessionsClient, self).__init__(base_url, username, api_key)
+    def __init__(self, base_url, username, api_key, region):
+        super(SessionsClient, self).__init__(base_url, username,
+                                             api_key, region)
         self.sessions_path = '/sessions'
         self.base_url = base_url
         self.username = username
         self.api_key = api_key
+        self.region = region
 
     def create(self, heartbeat_timeout, payload=None):
         path = self.sessions_path
@@ -107,6 +120,7 @@ class SessionsClient(BaseClient):
         heartbeater = HeartBeater(self.base_url,
                                   self.username,
                                   self.api_key,
+                                  self.region,
                                   None,
                                   heartbeat_timeout)
 
@@ -138,8 +152,9 @@ class SessionsClient(BaseClient):
 
 
 class EventsClient(BaseClient):
-    def __init__(self, base_url, username, api_key):
-        super(EventsClient, self).__init__(base_url, username, api_key)
+    def __init__(self, base_url, username, api_key, region):
+        super(EventsClient, self).__init__(base_url, username,
+                                           api_key, region)
         self.events_path = '/events'
 
     def list(self, marker=None):
@@ -151,8 +166,9 @@ class EventsClient(BaseClient):
 
 
 class ServicesClient(BaseClient):
-    def __init__(self, base_url, username, api_key):
-        super(ServicesClient, self).__init__(base_url, username, api_key)
+    def __init__(self, base_url, username, api_key, region):
+        super(ServicesClient, self).__init__(base_url, username,
+                                             api_key, region)
         self.services_path = '/services'
 
     def list(self):
@@ -187,8 +203,9 @@ class ServicesClient(BaseClient):
 
 
 class ConfigurationClient(BaseClient):
-    def __init__(self, base_url, username, api_key):
-        super(ConfigurationClient, self).__init__(base_url, username, api_key)
+    def __init__(self, base_url, username, api_key, region):
+        super(ConfigurationClient, self).__init__(base_url, username,
+                                                  api_key, region)
         self.configuration_path = '/configuration'
 
     def list(self):
@@ -212,8 +229,9 @@ class ConfigurationClient(BaseClient):
 
 
 class AccountClient(BaseClient):
-    def __init__(self, base_url, username, api_key):
-        super(AccountClient, self).__init__(base_url, username, api_key)
+    def __init__(self, base_url, username, api_key, region):
+        super(AccountClient, self).__init__(base_url, username,
+                                            api_key, region)
         self.limits_path = '/limits'
 
     def get_limits(self):
@@ -221,7 +239,7 @@ class AccountClient(BaseClient):
 
 
 class HeartBeater(BaseClient):
-    def __init__(self, base_url, username, api_key,
+    def __init__(self, base_url, username, api_key, region,
                  session_id, heartbeat_timeout):
         """
         HeartBeater will start heartbeating a session once start() is called,
@@ -239,7 +257,7 @@ class HeartBeater(BaseClient):
         time out if a heartbeat is not received.
         @type heartbeat_timeout: C{int}
         """
-        super(HeartBeater, self).__init__(base_url, username, api_key)
+        super(HeartBeater, self).__init__(base_url, username, api_key, region)
         self.session_id = session_id
         self.heartbeat_timeout = heartbeat_timeout
         self.heartbeat_interval = self._calculate_interval(heartbeat_timeout)
@@ -302,20 +320,19 @@ class Client(object):
         @param region: Rackspace region.
         @type region: C{str}
         """
-        auth_url = DEFAULT_AUTH_URLS.get(region, 'us')
-
-        if not auth_url.endswith('/'):
-            auth_url += '/'
-
         self.username = username
         self.api_key = api_key
         self.base_url = base_url
+        self.region = region
         self.sessions = SessionsClient(self.base_url, self.username,
-                                       self.api_key)
-        self.events = EventsClient(self.base_url, self.username, self.api_key)
+                                       self.api_key, self.region)
+        self.events = EventsClient(self.base_url, self.username,
+                                   self.api_key, self.region)
         self.services = ServicesClient(self.base_url, self.username,
-                                       self.api_key)
+                                       self.api_key, self.region)
         self.configuration = ConfigurationClient(self.base_url,
-                                                 self.username, self.api_key)
+                                                 self.username,
+                                                 self.api_key,
+                                                 self.region)
         self.account = AccountClient(self.base_url, self.username,
-                                     self.api_key)
+                                     self.api_key, self.region)
