@@ -107,7 +107,7 @@ class MockAPIServerRunner(ProcessRunner):
 
         with open(self.log_path, 'a+') as log_fp:
             port_arg = '%s --port=%s' % (script, self.port)
-            fixtures_dir_arg = '--fixtures-dir=txFarscapeClient/test/fixtures'
+            fixtures_dir_arg = '--fixtures-dir=farscape_client/test/fixtures'
             args = '%s %s' % (port_arg, fixtures_dir_arg)
             self.process = subprocess.Popen(args,
                                             shell=True,
