@@ -20,14 +20,20 @@ from farscape_client import Client
 
 class FarscapeClientTests(unittest.TestCase):
     def setUp(self):
-        with mock.patch('farscape_client.Client._authenticate') \
-                as _authenticate:
-            _authenticate.return_value = {'X-Auth-Token': 'auth_token',
-                                          'X-Tenant-Id': 'tenant_id'}
-            self.client = Client('user',
-                                 'api_key',
-                                 'http://127.0.0.1:8881/')
+        self.client = Client('user',
+                             'api_key',
+                             'http://127.0.0.1:8881/')
 
+    def authenticate(fn):
+        def wrapped(*args, **kwargs):
+            with mock.patch('farscape_client.client.BaseClient._authenticate')\
+                    as _authenticate:
+                _authenticate.return_value = {'X-Auth-Token': 'auth_token',
+                                              'X-Tenant-Id': 'tenant_id'}
+                fn(*args, **kwargs)
+        return wrapped
+
+    @authenticate
     def test_get_limits(self):
         expected = \
             {'rate':
@@ -37,6 +43,7 @@ class FarscapeClientTests(unittest.TestCase):
         result = self.client.account.get_limits()
         self.assertEqual(result, expected)
 
+    @authenticate
     def test_create_session(self):
         expected_keys = ['token']
         result = self.client.sessions.create(15)
@@ -44,16 +51,19 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertEqual(result[0].keys(), expected_keys)
         self.assertEqual(result[1], 'sessionId')
 
+    @authenticate
     def test_heartbeat_session(self):
         result = self.client.sessions.heartbeat('sessionId', 'someToken')
 
         self.assertTrue('token' in result)
 
+    @authenticate
     def test_create_service(self):
         result = self.client.services.create('sessionId', 'dfw1-messenger')
 
         self.assertEqual(result, 'dfw1-messenger')
 
+    @authenticate
     def test_get_service(self):
         expected_metadata = \
             {'region': 'dfw',
@@ -67,6 +77,7 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertEqual(result['tags'], ['tag1', 'tag2', 'tag3'])
         self.assertEqual(result['metadata'], expected_metadata)
 
+    @authenticate
     def test_list_services(self):
         expected_metadata = \
             {'region': 'dfw',
@@ -87,6 +98,7 @@ class FarscapeClientTests(unittest.TestCase):
                          expected_metadata)
         self.assertTrue('metadata' in result)
 
+    @authenticate
     def test_listForTag(self):
         expected_metadata = \
             {'region': 'dfw',
@@ -103,6 +115,7 @@ class FarscapeClientTests(unittest.TestCase):
                          expected_metadata)
         self.assertTrue('metadata' in result)
 
+    @authenticate
     def test_get_sessions(self):
         result = self.client.sessions.list()
 
@@ -112,6 +125,7 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertTrue('last_seen' in result['values'][0])
         self.assertTrue('metadata' in result)
 
+    @authenticate
     def test_get_session(self):
         result = self.client.sessions.get('sessionId')
 
@@ -120,6 +134,7 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertTrue('metadata' in result)
         self.assertTrue('last_seen' in result)
 
+    @authenticate
     def test_list_configuration(self):
         result = self.client.configuration.list()
 
@@ -127,6 +142,7 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertEqual(result['values'][0]['value'], 'test value 123456')
         self.assertTrue('metadata' in result)
 
+    @authenticate
     def test_get_configuration(self):
         result = self.client.configuration.get('configId')
 
