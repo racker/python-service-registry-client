@@ -21,7 +21,9 @@ except:
 import libcloud.security
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
+import random
 import requests
+from time import sleep
 
 libcloud.security.VERIFY_SSL_CERT = False
 
@@ -61,31 +63,33 @@ class BaseClient(object):
             if 'services' in path:
                 return id_from_url
 
-            return r.json, id_from_url
+            heartbeater.session_id = id_from_url
+            heartbeater.next_token = r.json['token']
+
+            return r.json, id_from_url, heartbeater
 
 
 class SessionsClient(BaseClient):
     def __init__(self, base_url, auth_headers):
         super(SessionsClient, self).__init__(base_url, auth_headers)
         self.sessions_path = '/sessions'
+        self.base_url = base_url
+        self.auth_headers = auth_headers
 
     def create(self, heartbeat_timeout, payload=None):
         path = self.sessions_path
         payload = deepcopy(payload) if payload else {}
         payload['heartbeat_timeout'] = heartbeat_timeout
 
-        return self.request('POST', path, payload=payload)
+        heartbeater = HeartBeater(self.base_url,
+                                  self.auth_headers,
+                                  None,
+                                  heartbeat_timeout)
 
-        # TODO
-        #heartbeater = HeartBeater(self.agent,
-        #                          self.base_url,
-        #                          None,
-        #                          heartbeat_timeout)
-
-        #return self.request('POST',
-        #                    path,
-        #                    payload=payload,
-        #                    heartbeater=heartbeater)
+        return self.request('POST',
+                            path,
+                            payload=payload,
+                            heartbeater=heartbeater)
 
     def list(self):
         path = self.sessions_path
@@ -190,6 +194,67 @@ class AccountClient(BaseClient):
 
     def get_limits(self):
         return self.request('GET', self.limits_path)
+
+
+class HeartBeater(BaseClient):
+    def __init__(self, base_url, auth_headers, session_id, heartbeat_timeout):
+        """
+        HeartBeater will start heartbeating a session once start() is called,
+        and stop heartbeating the session when stop() is called.
+
+        @param base_url:  The base Cloud Registry URL.
+        @type base_url: C{str}
+        @param session_id: The ID of the session to heartbeat.
+        @type session_id: C{str}
+        @param heartbeat_timeout: The amount of time after which a session will
+        time out if a heartbeat is not received.
+        @type heartbeat_timeout: C{int}
+        """
+        super(HeartBeater, self).__init__(base_url, auth_headers)
+        self.session_id = session_id
+        self.heartbeat_timeout = heartbeat_timeout
+        self.heartbeat_interval = self._calculate_interval(heartbeat_timeout)
+        self.next_token = None
+        self._stopped = False
+
+    def _calculate_interval(self, heartbeat_timeout):
+        if heartbeat_timeout < 15:
+            return heartbeat_timeout * 0.6
+        else:
+            return heartbeat_timeout * 0.8
+
+    def _start_heartbeating(self):
+        path = '/sessions/%s/heartbeat' % self.session_id
+        payload = {'token': self.next_token}
+
+        if self._stopped:
+            return
+
+        interval = self.heartbeat_interval
+
+        if interval > 5:
+            interval = interval + random.randrange(-3, 1)
+
+        sleep(interval)
+
+        result = self.request('POST', path, payload=payload)
+
+        self.next_token = result['token']
+
+        self._start_heartbeating()
+
+    def start(self):
+        """
+        Start heartbeating the session. Will continue to heartbeat
+        until stop() is called.
+        """
+        return self._start_heartbeating()
+
+    def stop(self):
+        """
+        Stop heartbeating the session.
+        """
+        self._stopped = True
 
 
 class Client(object):
