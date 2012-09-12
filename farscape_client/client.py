@@ -204,10 +204,11 @@ class Client(object):
         self.auth_headers = self._authenticate()
         self.base_url = base_url
         self.sessions = SessionsClient(self.base_url, self.auth_headers)
-        #self.events = EventsClient(self.base_url)
-        #self.services = ServicesClient(self.base_url)
-        #self.configuration = ConfigurationClient(self.base_url)
-        #self.account = AccountClient(self.base_url)
+        self.events = EventsClient(self.base_url, self.auth_headers)
+        self.services = ServicesClient(self.base_url, self.auth_headers)
+        self.configuration = ConfigurationClient(self.base_url,
+                                                 self.auth_headers)
+        self.account = AccountClient(self.base_url, self.auth_headers)
 
     def _authenticate(self):
         try:

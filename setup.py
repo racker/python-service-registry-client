@@ -20,6 +20,7 @@ from setuptools import setup
 from subprocess import call
 
 from utils.dist import get_packages, get_data_files
+from farscape_client.test.utils import MockAPIServerRunner
 
 try:
     import epydoc
@@ -93,9 +94,8 @@ class TestCommand(Command):
     def run(self):
         self._run_mock_api_server()
         cwd = os.getcwd()
-        # TODO
-        #retcode = call(('trial %s/farscape_client/test/' % (cwd)).split(' '))
-        #sys.exit(retcode)
+        retcode = call(('python %s/farscape_client/test/test_client.py' % (cwd)).split(' '))
+        sys.exit(retcode)
 
 
 setup(
