@@ -99,13 +99,13 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertTrue('metadata' in result)
 
     @authenticate
-    def test_listForTag(self):
+    def test_list_for_tag(self):
         expected_metadata = \
             {'region': 'dfw',
              'port': '5757',
              'ip': '127.0.0.1'}
 
-        result = self.client.services.listForTag('tag1')
+        result = self.client.services.list_for_tag('tag1')
 
         self.assertEqual(result['values'][0]['id'], 'dfw1-messenger')
         self.assertEqual(result['values'][0]['session_id'], 'sessionId')

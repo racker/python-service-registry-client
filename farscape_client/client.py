@@ -180,7 +180,7 @@ class ServicesClient(BaseClient):
     def list(self):
         return self.request('GET', self.services_path)
 
-    def listForTag(self, tag):
+    def list_for_tag(self, tag):
         options = {'tag': tag}
 
         return self.request('GET', self.services_path, options=options)
