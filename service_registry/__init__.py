@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from farscape_client.client import Client
+from service_registry.client import Client
 
 __all__ = ['Client']
