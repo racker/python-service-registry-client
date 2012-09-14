@@ -23,10 +23,9 @@ from dateutil import parser
 import libcloud.security
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
-import pytz
 import random
 import requests
-from time import sleep
+from time import sleep, mktime
 
 libcloud.security.VERIFY_SSL_CERT = False
 
@@ -85,8 +84,10 @@ class BaseClient(object):
 
     def _authenticate(self):
         if self.auth_headers:
+            current_time = datetime.now()
+            unix_current_time = mktime(current_time.timetuple())
             if self.auth_token_expires and \
-                    self.auth_token_expires < datetime.now(pytz.utc):
+                    self.auth_token_expires < unix_current_time:
                         return self.auth_headers
         try:
             driver = RackspaceNodeDriver(self.username, self.api_key,
@@ -97,7 +98,9 @@ class BaseClient(object):
             auth_token = driver.connection.auth_token
             tenant_id = driver.connection.request_path.split('/')[-1]
             expires = driver.connection.auth_token_expires
-            self.auth_token_expires = parser.parse(expires)
+            expires_datetime = parser.parse(expires)
+            self.auth_token_expires = \
+                mktime(expires_datetime.timetuple())
             return {'X-Auth-Token': auth_token,
                     'X-Tenant-Id': tenant_id}
         except (InvalidCredsError, MalformedResponseError):
