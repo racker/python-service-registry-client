@@ -20,7 +20,7 @@ from setuptools import setup
 from subprocess import call
 
 from utils.dist import get_packages, get_data_files
-from farscape_client.test.utils import MockAPIServerRunner
+from service_registry.test.utils import MockAPIServerRunner
 
 try:
     import epydoc
@@ -52,7 +52,7 @@ class Pep8Command(Command):
             sys.exit(1)
 
         cwd = os.getcwd()
-        retcode = call(('pep8 %s/farscape_client/' % (cwd)).split(' '))
+        retcode = call(('pep8 %s/service_registry/' % (cwd)).split(' '))
         sys.exit(retcode)
 
 
@@ -72,8 +72,8 @@ class ApiDocsCommand(Command):
 
         os.system(
             'pydoctor'
-            ' --add-package=farscape_client'
-            ' --project-name=farscape_client'
+            ' --add-package=service_registry'
+            ' --project-name=service_registry'
         )
 
 
@@ -94,14 +94,14 @@ class TestCommand(Command):
     def run(self):
         self._run_mock_api_server()
         cwd = os.getcwd()
-        retcode = call(('python %s/farscape_client/test/test_client.py' % (cwd)).split(' '))
+        retcode = call(('python %s/service_registry/test/test_client.py' % (cwd)).split(' '))
         sys.exit(retcode)
 
 
 setup(
-    name='farscape_client',
+    name='service_registry',
     version='0.1.0',
-    description='Twisted Farscape API Client',
+    description='Python client for Rackspace Cloud Service Registry.',
     author='Rackspace Hosting, Inc.',
     author_email='shawn.smith@rackspace.com',
     classifiers=[
@@ -116,12 +116,12 @@ setup(
         'apidocs': ApiDocsCommand,
         'test': TestCommand
     },
-    packages=get_packages('farscape_client'),
+    packages=get_packages('service_registry'),
     package_dir={
-        'farscape_client': 'farscape_client',
+        'service_registry': 'service_registry',
     },
-    package_data={'farscape_client': get_data_files('farscape_client',
-                                               parent='farscape_client')},
+    package_data={'service_registry': get_data_files('service_registry',
+                                               parent='service_registry')},
     license='Apache License (2.0)',
     url='https://github.com/racker/python-twisted-farscape-client',
     install_requires=['Twisted'],
