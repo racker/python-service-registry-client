@@ -23,6 +23,7 @@ from dateutil import parser
 import libcloud.security
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
+import pytz
 import random
 import requests
 from time import sleep
@@ -33,7 +34,7 @@ US_AUTH_URL = 'https://identity.api.rackspacecloud.com/v2.0/tokens'
 UK_AUTH_URL = 'https://lon.identity.api.rackspacecloud.com/v2.0/tokens'
 DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
                      'uk': UK_AUTH_URL}
-DEFAULT_API_URL = 'http://fs-staging.k1k.me/v1.0/'
+DEFAULT_API_URL = 'https://csr-staging.rax.io/v1.0/'
 
 
 class BaseClient(object):
@@ -85,7 +86,7 @@ class BaseClient(object):
     def _authenticate(self):
         if self.auth_headers:
             if self.auth_token_expires and \
-                    self.auth_token_expires < datetime.now():
+                    self.auth_token_expires < datetime.now(pytz.utc):
                         return self.auth_headers
         try:
             driver = RackspaceNodeDriver(self.username, self.api_key,
