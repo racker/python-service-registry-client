@@ -2,7 +2,7 @@
     "values": [
         {
             "id": "dfw1-api",
-            "session_id": "seJQEAny8f",
+            "session_id": "seOne",
             "tags": [],
             "metadata": {}
         }
@@ -12,6 +12,6 @@
         "limit": 1,
         "marker": null,
         "next_marker": "dfw1-messenger",
-        "next_href": "https://127.0.0.1:44048/v1.0/7777/services?limit=1&marker=dfw1-messenger"
+        "next_href": "https://todo.api.rackspacecloud.com/v1.0/7777/services?limit=1&marker=dfw1-messenger"
     }
 }

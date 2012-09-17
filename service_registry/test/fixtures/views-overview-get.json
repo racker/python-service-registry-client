@@ -1,0 +1,42 @@
+{
+    "values": [
+        {
+            "session": {
+                "id": "seId0",
+                "metadata": {
+                    "region": "dfw"
+                },
+                "heartbeat_timeout": 30,
+                "last_seen": null
+            },
+            "services": [
+                {
+                    "id": "dfw1-api",
+                    "session_id": "seId0",
+                    "tags": [],
+                    "metadata": {}
+                },
+                {
+                    "id": "dfw1-messenger",
+                    "session_id": "seId0",
+                    "tags": [
+                        "tag1",
+                        "tag2",
+                        "tag3"
+                    ],
+                    "metadata": {
+                        "region": "dfw",
+                        "port": "5757",
+                        "ip": "127.0.0.1"
+                    }
+                }
+            ]
+        }
+    ],
+    "metadata": {
+        "count": 1,
+        "limit": 100,
+        "marker": null,
+        "next_href": null
+    }
+}

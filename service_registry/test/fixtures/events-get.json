@@ -1,26 +1,34 @@
 {
     "values": [
         {
-            "id": "ba789040-f785-11e1-8b3a-29ab16ce9cad",
-            "timestamp": 1346868952900,
+            "id": "6bc8d050-f86a-11e1-a89e-ca2ffe480b20",
+            "timestamp": 1346967146370,
             "type": "service.join",
             "payload": {
-                "service_id": "dfw1-messenger",
-                "session_id": "sessionId"
+                "id": "dfw1-messenger",
+                "session_id": "sessionId",
+                "tags": [
+                    "tag1",
+                    "tag2",
+                    "tag3"
+                ],
+                "metadata": {
+                    "region": "dfw",
+                    "port": "5757",
+                    "ip": "127.0.0.1"
+                }
             }
         },
         {
-            "id": "ba8ba310-f785-11e1-8b3a-29ab16ce9cad",
-            "timestamp": 1346868953025,
             "type": "service.join",
             "payload": {
-                "service_id": "dfw1-api",
-                "session_id": "sessionId"
+                "id": "dfw1-api",
+                "session_id": "sessionId",
+                "tags": [],
+                "metadata": {}
             }
         },
         {
-            "id": "bab80a40-f785-11e1-8b3a-29ab16ce9cad",
-            "timestamp": 1346868953316,
             "type": "configuration_value.update",
             "payload": {
                 "old_value": null,
