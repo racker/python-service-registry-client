@@ -103,7 +103,7 @@ setup(
     version='0.1.0',
     description='Python client for Rackspace Cloud Service Registry.',
     author='Rackspace Hosting, Inc.',
-    author_email='shawn.smith@rackspace.com',
+    author_email='sr@rackspace.com',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 2.6',
