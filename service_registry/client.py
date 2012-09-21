@@ -37,7 +37,9 @@ DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
 DEFAULT_API_URL = 'https://csr-staging.rax.io/v1.0/'
 MAX_HEARTBEAT_TIMEOUT = 30
 
-ACCEPTABLE_POST_CODES = [httplib.CREATED, httplib.OK]
+ACCEPTABLE_POST_CODES = (httplib.CREATED, httplib.NO_CONTENT)
+ACCEPTABLE_PUT_CODES = (httplib.NO_CONTENT,)
+ACCEPTABLE_DELETE_CODES = (httplib.NO_CONTENT,)
 
 
 class BaseClient(object):
@@ -69,6 +71,7 @@ class BaseClient(object):
                              headers=self.auth_headers,
                              params=options)
             return r.json
+
         elif method == 'POST':
             r = requests.post(request_url, headers=self.auth_headers,
                               data=json.dumps(payload))
@@ -88,6 +91,25 @@ class BaseClient(object):
             heartbeater.next_token = r.json['token']
 
             return r.json, id_from_url, heartbeater
+
+        elif method == 'PUT':
+            r = requests.put(request_url,
+                             headers=self.auth_headers,
+                             data=json.dumps(payload))
+
+            if r.status_code not in ACCEPTABLE_PUT_CODES:
+                raise ValidationError('Unable to perform request: %s' % r.json)
+
+            return True
+
+        elif method == 'DELETE':
+            r = requests.delete(request_url,
+                                headers=self.auth_headers)
+
+            if r.status_code not in ACCEPTABLE_DELETE_CODES:
+                raise ValidationError('Unable to perform request: %s' % r.json)
+
+            return True
 
     def _authenticate(self):
         if self.auth_headers:
