@@ -20,6 +20,7 @@ except:
 
 from datetime import datetime
 from dateutil import parser
+import httplib
 import libcloud.security
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
@@ -34,6 +35,9 @@ UK_AUTH_URL = 'https://lon.identity.api.rackspacecloud.com/v2.0/tokens'
 DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
                      'uk': UK_AUTH_URL}
 DEFAULT_API_URL = 'https://csr-staging.rax.io/v1.0/'
+MAX_HEARTBEAT_TIMEOUT = 30
+
+ACCEPTABLE_POST_CODES = [httplib.CREATED, httplib.OK]
 
 
 class BaseClient(object):
@@ -68,6 +72,9 @@ class BaseClient(object):
         elif method == 'POST':
             r = requests.post(request_url, headers=self.auth_headers,
                               data=json.dumps(payload))
+
+            if r.status_code not in ACCEPTABLE_POST_CODES:
+                raise ValidationError('Unable to perform request: %s' % r.json)
 
             if 'heartbeat' in path:
                 return r.json
@@ -309,6 +316,8 @@ class HeartBeater(BaseClient):
         """
         self._stopped = True
 
+class ValidationError(Exception):
+    pass
 
 class Client(object):
     """
