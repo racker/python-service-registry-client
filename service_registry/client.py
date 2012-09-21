@@ -37,6 +37,7 @@ DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
 DEFAULT_API_URL = 'https://csr-staging.rax.io/v1.0/'
 MAX_HEARTBEAT_TIMEOUT = 30
 
+ACCEPTABLE_GET_CODES = (httplib.OK,)
 ACCEPTABLE_POST_CODES = (httplib.CREATED, httplib.NO_CONTENT)
 ACCEPTABLE_PUT_CODES = (httplib.NO_CONTENT,)
 ACCEPTABLE_DELETE_CODES = (httplib.NO_CONTENT,)
@@ -70,6 +71,10 @@ class BaseClient(object):
             r = requests.get(request_url,
                              headers=self.auth_headers,
                              params=options)
+
+            if r.status_code not in ACCEPTABLE_GET_CODES:
+                raise ValidationError('Unable to perform request: %s' % r.json)
+
             return r.json
 
         elif method == 'POST':
