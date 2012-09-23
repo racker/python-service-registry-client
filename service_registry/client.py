@@ -28,8 +28,6 @@ import random
 import requests
 from time import sleep, mktime
 
-libcloud.security.VERIFY_SSL_CERT = False
-
 US_AUTH_URL = 'https://identity.api.rackspacecloud.com/v2.0/tokens'
 UK_AUTH_URL = 'https://lon.identity.api.rackspacecloud.com/v2.0/tokens'
 DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
