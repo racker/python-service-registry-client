@@ -21,7 +21,6 @@ except:
 from datetime import datetime
 from dateutil import parser
 import httplib
-import libcloud.security
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
 import random
