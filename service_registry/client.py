@@ -208,8 +208,40 @@ class ServicesClient(BaseClient):
                                              api_key, region)
         self.services_path = '/services'
 
+    def _write_services_cache(self, response_json):
+        json_string = json.dumps(response_json)
+        try:
+            with open('.services_cache.json', 'w') as f:
+                f.write(json_string)
+
+                return
+        except Exception as e:
+            print 'Unable to write to services cache: %s' % e
+
+            return
+
+    def _read_services_cache(self):
+        try:
+            with open('.services_cache.json', 'r') as f:
+
+                return json.loads(f.read())
+        except Exception as e:
+            print 'Services cache has not yet been written. It will' +\
+                  ' be written the next time you are able to list services:' +\
+                  ' %s' % e
+            return
+
+    def _list_services(self):
+        try:
+            response_json = self.request('GET', self.services_path)
+            self._write_services_cache(response_json)
+
+            return response_json
+        except:
+            return self._read_services_cache()
+
     def list(self):
-        return self.request('GET', self.services_path)
+        return self._list_services()
 
     def list_for_tag(self, tag):
         options = {'tag': tag}
