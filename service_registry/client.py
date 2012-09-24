@@ -238,6 +238,36 @@ class ServicesClient(BaseClient):
 
         return self.request('DELETE', path)
 
+    def register(self, session_id, service_id, payload=None, retry_delay=2):
+        retry_count = MAX_HEARTBEAT_TIMEOUT/retry_delay
+        success = False
+        retry_counter = 0
+        last_err = None
+        result = None
+
+        def do_register(success, result, retry_counter, last_err):
+            if success and (retry_counter < retry_count):
+                return result
+
+            elif (not success) and (retry_counter == retry_count):
+                return last_err
+            try:
+                result = self.create(session_id, service_id, payload)
+                success = True
+
+                return do_register(success, result, retry_counter, last_err)
+            except ValidationError as e:
+                last_err = e.args[0]
+                if 'serviceWithThisIdExists' in last_err:
+                    retry_counter += 1
+                    sleep(retry_delay)
+
+                    return do_register(success, result, retry_counter, last_err)
+                else:
+                    return last_err
+
+        return do_register(success, result, retry_counter, last_err)
+
 
 class ConfigurationClient(BaseClient):
     def __init__(self, base_url, username, api_key, region):
