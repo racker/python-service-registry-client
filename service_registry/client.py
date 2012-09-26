@@ -282,7 +282,7 @@ class ServicesClient(BaseClient):
         return self.request('DELETE', path)
 
     def register(self, session_id, service_id, payload=None, retry_delay=2):
-        retry_count = MAX_HEARTBEAT_TIMEOUT/retry_delay
+        retry_count = MAX_HEARTBEAT_TIMEOUT / retry_delay
         success = False
         retry_counter = 0
         last_err = None
@@ -305,7 +305,8 @@ class ServicesClient(BaseClient):
                     retry_counter += 1
                     sleep(retry_delay)
 
-                    return do_register(success, result, retry_counter, last_err)
+                    return do_register(success, result, retry_counter,
+                                       last_err)
                 else:
                     return last_err
 
@@ -413,8 +414,10 @@ class HeartBeater(BaseClient):
         """
         self._stopped = True
 
+
 class ValidationError(Exception):
     pass
+
 
 class Client(object):
     """

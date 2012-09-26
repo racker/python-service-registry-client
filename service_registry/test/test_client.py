@@ -26,8 +26,8 @@ class FarscapeClientTests(unittest.TestCase):
 
     def authenticate(fn):
         def wrapped(*args, **kwargs):
-            with mock.patch('service_registry.client.BaseClient._authenticate')\
-                    as _authenticate:
+            name = 'service_registry.client.BaseClient._authenticate'
+            with mock.patch(name) as _authenticate:
                 _authenticate.return_value = {'X-Auth-Token': 'auth_token',
                                               'X-Tenant-Id': 'tenant_id'}
                 fn(*args, **kwargs)
