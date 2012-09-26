@@ -64,6 +64,7 @@ class BaseClient(object):
         self.auth_headers = self._authenticate()
         tenant_id = self.auth_headers['X-Tenant-Id']
         request_url = self.base_url + tenant_id + path
+
         if method == 'GET':
             r = requests.get(request_url,
                              headers=self.auth_headers,
@@ -73,7 +74,6 @@ class BaseClient(object):
                 raise ValidationError('Unable to perform request: %s' % r.json)
 
             return r.json
-
         elif method == 'POST':
             r = requests.post(request_url, headers=self.auth_headers,
                               data=json.dumps(payload))
@@ -93,7 +93,6 @@ class BaseClient(object):
             heartbeater.next_token = r.json['token']
 
             return r.json, id_from_url, heartbeater
-
         elif method == 'PUT':
             r = requests.put(request_url,
                              headers=self.auth_headers,
@@ -103,7 +102,6 @@ class BaseClient(object):
                 raise ValidationError('Unable to perform request: %s' % r.json)
 
             return True
-
         elif method == 'DELETE':
             r = requests.delete(request_url,
                                 headers=self.auth_headers)
