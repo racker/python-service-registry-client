@@ -113,13 +113,13 @@ class BaseClient(object):
 
             return True
 
-    def _authenticate(self):
+    def _authenticate(self, force=False):
         if self.auth_headers:
             current_time = datetime.now()
             unix_current_time = mktime(current_time.timetuple())
-            if self.auth_token_expires and \
-                    self.auth_token_expires < unix_current_time:
-                        return self.auth_headers
+            if not force and (self.auth_token_expires and
+               (self.auth_token_expires < unix_current_time)):
+                return self.auth_headers
         try:
             driver = RackspaceNodeDriver(self.username, self.api_key,
                                          ex_force_auth_url=self.auth_url,
