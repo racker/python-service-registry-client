@@ -49,7 +49,12 @@ class BaseClient(object):
         self.auth_token_expires = None
         self.region = region
 
-        auth_url = DEFAULT_AUTH_URLS.get(region, DEFAULT_AUTH_URLS['us'])
+        valid_regions = DEFAULT_AUTH_URLS.keys()
+        if region not in valid_regions:
+            raise ValueError('Invalid region %s. Valid regions are: %s' % (
+                             region, ', '.join(valid_regions)))
+
+        auth_url = DEFAULT_AUTH_URLS[region]
 
         if not auth_url.endswith('/'):
             auth_url += '/'
