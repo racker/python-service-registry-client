@@ -65,17 +65,6 @@ class BaseClient(object):
     def get_id_from_url(self, url):
         return url.split('/')[-1]
 
-    def _request_with_retry(self, method, url, headers=None, params=None,
-                            data=None, retry_count=0):
-        request_kwargs = {'method': method.lower(), 'url': url,
-                          'headers': headers, 'params': params,
-                          'data': data}
-
-        if retry_count < MAX_401_RETRIES:
-            retry_count += 1
-            r = requests.request(**request_kwargs)
-            request_method()
-
     def request(self, method, path, options=None, payload=None,
                 heartbeater=None, re_authenticate=False, retry_count=0):
         self.auth_headers = self._authenticate(force=re_authenticate)
