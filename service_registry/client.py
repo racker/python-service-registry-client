@@ -49,7 +49,7 @@ class BaseClient(object):
         self.auth_token_expires = None
         self.region = region
 
-        auth_url = DEFAULT_AUTH_URLS.get(region, 'us')
+        auth_url = DEFAULT_AUTH_URLS.get(region, DEFAULT_AUTH_URLS['us'])
 
         if not auth_url.endswith('/'):
             auth_url += '/'
