@@ -33,6 +33,7 @@ DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
                      'uk': UK_AUTH_URL}
 DEFAULT_API_URL = 'https://csr-staging.rax.io/v1.0/'
 MAX_HEARTBEAT_TIMEOUT = 30
+MAX_401_RETRIES = 1
 
 ACCEPTABLE_GET_CODES = (httplib.OK,)
 ACCEPTABLE_POST_CODES = (httplib.OK, httplib.CREATED)
@@ -64,28 +65,50 @@ class BaseClient(object):
     def get_id_from_url(self, url):
         return url.split('/')[-1]
 
-    def request(self, method, path, options=None,
-                payload=None, heartbeater=None):
-        self.auth_headers = self._authenticate()
+    def _request_with_retry(self, method, url, headers=None, params=None,
+                            data=None, retry_count=0):
+        request_kwargs = {'method': method.lower(), 'url': url,
+                          'headers': headers, 'params': params,
+                          'data': data}
+
+        if retry_count < MAX_401_RETRIES:
+            retry_count += 1
+            r = requests.request(**request_kwargs)
+            request_method()
+
+    def request(self, method, path, options=None, payload=None,
+                heartbeater=None, re_authenticate=False, retry_count=0):
+        self.auth_headers = self._authenticate(force=re_authenticate)
         tenant_id = self.auth_headers['X-Tenant-Id']
         request_url = self.base_url + tenant_id + path
 
         if method not in ['GET', 'POST', 'PUT', 'DELETE']:
             raise ValueError('Invalid method: %s' % (method))
 
-        if method == 'GET':
-            r = requests.get(request_url,
-                             headers=self.auth_headers,
-                             params=options)
+        data = json.dumps(payload) if payload else None
+        request_kwargs = {'method': method.lower(), 'url': request_url,
+                          'headers': self.auth_headers, 'params': options,
+                          'data': data}
 
+        if retry_count < MAX_401_RETRIES:
+            retry_count += 1
+            r = requests.request(**request_kwargs)
+
+            if r.status_code == httplib.UNAUTHORIZED:
+                return self.request(method=method, path=path, options=options,
+                                    payload=payload, heartbeater=heartbeater,
+                                    re_authenticate=True,
+                                    retry_count=retry_count)
+        else:
+            # TODO: throw better error
+            raise Exception('API returned 401')
+
+        if method == 'GET':
             if r.status_code not in ACCEPTABLE_GET_CODES:
                 raise ValidationError('Unable to perform request: %s' % r.json)
 
             return r.json
         elif method == 'POST':
-            r = requests.post(request_url, headers=self.auth_headers,
-                              data=json.dumps(payload))
-
             if r.status_code not in ACCEPTABLE_POST_CODES:
                 raise ValidationError('Unable to perform request: %s' % r.json)
 
@@ -102,18 +125,11 @@ class BaseClient(object):
 
             return r.json, id_from_url, heartbeater
         elif method == 'PUT':
-            r = requests.put(request_url,
-                             headers=self.auth_headers,
-                             data=json.dumps(payload))
-
             if r.status_code not in ACCEPTABLE_PUT_CODES:
                 raise ValidationError('Unable to perform request: %s' % r.json)
 
             return True
         elif method == 'DELETE':
-            r = requests.delete(request_url,
-                                headers=self.auth_headers)
-
             if r.status_code not in ACCEPTABLE_DELETE_CODES:
                 raise ValidationError('Unable to perform request: %s' % r.json)
 
