@@ -70,6 +70,9 @@ class BaseClient(object):
         tenant_id = self.auth_headers['X-Tenant-Id']
         request_url = self.base_url + tenant_id + path
 
+        if method not in ['GET', 'POST', 'PUT', 'DELETE']:
+            raise ValueError('Invalid method: %s' % (method))
+
         if method == 'GET':
             r = requests.get(request_url,
                              headers=self.auth_headers,
