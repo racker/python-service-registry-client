@@ -22,12 +22,14 @@ from dateutil import parser
 import httplib
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
+import os
 import random
 import requests
 from time import mktime, sleep, time
 
 US_AUTH_URL = 'https://identity.api.rackspacecloud.com/v2.0/tokens'
 UK_AUTH_URL = 'https://lon.identity.api.rackspacecloud.com/v2.0/tokens'
+SERVICES_CACHE_DIR = '.services_cache/'
 DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
                      'uk': UK_AUTH_URL}
 DEFAULT_API_URL = 'https://csr-staging.rax.io/v1.0/'
@@ -218,10 +220,13 @@ class ServicesClient(BaseClient):
                                              api_key, region)
         self.services_path = '/services'
 
-    def _write_services_cache(self, response_json):
+    def _write_cache(self, response_json, path):
+        if not os.path.exists(SERVICES_CACHE_DIR):
+            os.makedirs(SERVICES_CACHE_DIR)
+
         json_string = json.dumps(response_json)
         try:
-            with open('.services_cache.json', 'w') as f:
+            with open(os.path.join(SERVICES_CACHE_DIR, path), 'w') as f:
                 f.write(json_string)
 
                 return
@@ -230,33 +235,40 @@ class ServicesClient(BaseClient):
 
             return
 
-    def _read_services_cache(self):
+    def _read_cache(self, path):
         try:
-            with open('.services_cache.json', 'r') as f:
+            with open(os.path.join(SERVICES_CACHE_DIR, path), 'r') as f:
 
                 return json.loads(f.read())
         except Exception as e:
-            print 'Services cache has not yet been written. It will' +\
-                  ' be written the next time you are able to list services:' +\
-                  ' %s' % e
+            print 'Services cache unavailable:  %s' % e
+
             return
 
     def _list_services(self):
         try:
             response_json = self.request('GET', self.services_path)
-            self._write_services_cache(response_json)
+            self._write_cache(response_json, 'global.json')
 
             return response_json
         except:
-            return self._read_services_cache()
+            return self._read_cache('global.json')
 
     def list(self):
         return self._list_services()
 
     def list_for_tag(self, tag):
         options = {'tag': tag}
+        tag_filename = '%s.json' % (tag,)
 
-        return self.request('GET', self.services_path, options=options)
+        try:
+            response_json = \
+                self.request('GET', self.services_path, options=options)
+            self._write_cache(response_json, tag_filename)
+
+            return response_json
+        except:
+            return self._read_cache(tag_filename)
 
     def get(self, service_id):
         path = '%s/%s' % (self.services_path, service_id)
