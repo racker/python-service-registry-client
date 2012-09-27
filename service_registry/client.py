@@ -129,7 +129,7 @@ class BaseClient(object):
             current_time = datetime.now()
             unix_current_time = mktime(current_time.timetuple())
             if not force and (self.auth_token_expires and
-               (self.auth_token_expires < unix_current_time)):
+                             (self.auth_token_expires < unix_current_time)):
                 return self.auth_headers
         try:
             driver = RackspaceNodeDriver(self.username, self.api_key,
