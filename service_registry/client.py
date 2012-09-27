@@ -18,14 +18,13 @@ try:
 except:
         import json
 
-from datetime import datetime
 from dateutil import parser
 import httplib
 from libcloud.common.types import InvalidCredsError, MalformedResponseError
 from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
 import random
 import requests
-from time import sleep, mktime
+from time import mktime, sleep, time
 
 US_AUTH_URL = 'https://identity.api.rackspacecloud.com/v2.0/tokens'
 UK_AUTH_URL = 'https://lon.identity.api.rackspacecloud.com/v2.0/tokens'
@@ -35,10 +34,11 @@ DEFAULT_API_URL = 'https://csr-staging.rax.io/v1.0/'
 MAX_HEARTBEAT_TIMEOUT = 30
 MAX_401_RETRIES = 1
 
-ACCEPTABLE_GET_CODES = (httplib.OK,)
-ACCEPTABLE_POST_CODES = (httplib.OK, httplib.CREATED)
-ACCEPTABLE_PUT_CODES = (httplib.NO_CONTENT,)
-ACCEPTABLE_DELETE_CODES = (httplib.NO_CONTENT,)
+
+ACCEPTABLE_STATUS_CODES = {'GET': (httplib.OK,),
+                           'POST': (httplib.OK, httplib.CREATED),
+                           'PUT': (httplib.NO_CONTENT,),
+                           'DELETE': (httplib.NO_CONTENT,)}
 
 
 class BaseClient(object):
@@ -92,14 +92,16 @@ class BaseClient(object):
             # TODO: throw better error
             raise Exception('API returned 401')
 
-        if method == 'GET':
-            if r.status_code not in ACCEPTABLE_GET_CODES:
+        def _check_status_code(status_code, method):
+            if status_code not in ACCEPTABLE_STATUS_CODES[method]:
                 raise ValidationError('Unable to perform request: %s' % r.json)
+
+        if method == 'GET':
+            _check_status_code(r.status_code, 'GET')
 
             return r.json
         elif method == 'POST':
-            if r.status_code not in ACCEPTABLE_POST_CODES:
-                raise ValidationError('Unable to perform request: %s' % r.json)
+            _check_status_code(r.status_code, 'POST')
 
             if 'heartbeat' in path:
                 return r.json
@@ -114,19 +116,17 @@ class BaseClient(object):
 
             return r.json, id_from_url, heartbeater
         elif method == 'PUT':
-            if r.status_code not in ACCEPTABLE_PUT_CODES:
-                raise ValidationError('Unable to perform request: %s' % r.json)
+            _check_status_code(r.status_code, 'PUT')
 
             return True
         elif method == 'DELETE':
-            if r.status_code not in ACCEPTABLE_DELETE_CODES:
-                raise ValidationError('Unable to perform request: %s' % r.json)
+            _check_status_code(r.status_code, 'DELETE')
 
             return True
 
     def _authenticate(self, force=False):
         if self.auth_headers:
-            current_time = time.time()
+            current_time = time()
             if not force and (self.auth_token_expires and
                              (self.auth_token_expires < current_time)):
                 return self.auth_headers
