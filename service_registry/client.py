@@ -91,8 +91,7 @@ class BaseClient(object):
                                     re_authenticate=True,
                                     retry_count=retry_count)
         else:
-            # TODO: throw better error
-            raise Exception('API returned 401')
+            raise APIError('API returned 401')
 
         def _check_status_code(status_code, method):
             if status_code not in ACCEPTABLE_STATUS_CODES[method]:
@@ -147,8 +146,9 @@ class BaseClient(object):
             return {'X-Auth-Token': auth_token,
                     'X-Tenant-Id': tenant_id}
         except (InvalidCredsError, MalformedResponseError):
-            raise Exception('The username or password you entered is ' +
-                            'incorrect. Please try again.')
+            raise InvalidCredentialsError('The username or password you'
+                                          ' entered is incorrect. Please'
+                                          ' try again.')
 
 
 class SessionsClient(BaseClient):
@@ -427,6 +427,14 @@ class HeartBeater(BaseClient):
 
 
 class ValidationError(Exception):
+    pass
+
+
+class APIError(Exception):
+    pass
+
+
+class InvalidCredentialsError(APIError):
     pass
 
 
