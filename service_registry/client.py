@@ -95,7 +95,11 @@ class BaseClient(object):
 
         def _check_status_code(status_code, method):
             if status_code not in ACCEPTABLE_STATUS_CODES[method]:
-                raise ValidationError('Unable to perform request: %s' % r.json)
+                data = r.json
+                raise ValidationError(type=data['type'], code=data['code'],
+                                      message=data['message'],
+                                      txnId=data['txnId'],
+                                      details=data['details'])
 
         if method == 'GET':
             _check_status_code(r.status_code, 'GET')
@@ -134,7 +138,7 @@ class BaseClient(object):
         try:
             driver = RackspaceNodeDriver(self.username, self.api_key,
                                          ex_force_auth_url=self.auth_url,
-                                         ex_force_version='2.0',
+                                         ex_force_auth_version='2.0',
                                          ex_force_service_region=self.region)
             driver.connection._populate_hosts_and_request_paths()
             auth_token = driver.connection.auth_token
@@ -312,7 +316,7 @@ class ServicesClient(BaseClient):
                 return do_register(success, result, retry_counter, last_err)
             except ValidationError as e:
                 last_err = e.args[0]
-                if 'serviceWithThisIdExists' in last_err:
+                if last_err.type == 'serviceWithThisIdExists':
                     retry_counter += 1
                     sleep(retry_delay)
 
@@ -427,6 +431,18 @@ class HeartBeater(BaseClient):
 
 
 class ValidationError(Exception):
+    def __init__(self, type, code, message, txnId, details):
+        self.type = type
+        self.code = code
+        self.message = message
+        self.txnId = txnId
+        self.details = details
+
+    def __str__(self):
+        return ('<ValidationError type=%s, code=%s, txnId=%s, ' \
+                'message=%s, details=%s' %
+                (self.type, self.code, self.txnId, self.message, self.details))
+
     pass
 
 
