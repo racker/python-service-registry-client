@@ -138,7 +138,7 @@ class BaseClient(object):
         try:
             driver = RackspaceNodeDriver(self.username, self.api_key,
                                          ex_force_auth_url=self.auth_url,
-                                         ex_force_version='2.0',
+                                         ex_force_auth_version='2.0',
                                          ex_force_service_region=self.region)
             driver.connection._populate_hosts_and_request_paths()
             auth_token = driver.connection.auth_token
