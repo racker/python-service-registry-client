@@ -15,7 +15,7 @@
 import mock
 import unittest
 
-from service_registry import Client
+from service_registry.client import Client, HeartBeater
 
 
 class FarscapeClientTests(unittest.TestCase):
@@ -50,6 +50,10 @@ class FarscapeClientTests(unittest.TestCase):
 
         self.assertEqual(result[0].keys(), expected_keys)
         self.assertEqual(result[1], 'sessionId')
+        self.assertTrue(isinstance(result[2], HeartBeater))
+        self.assertEqual(result[2].heartbeat_interval, 12.0)
+        self.assertEqual(result[2].heartbeat_timeout, 15)
+        self.assertEqual(result[2].next_token, '6bc8d050-f86a-11e1-a89e-ca2ffe480b20')
 
     @authenticate
     def test_heartbeat_session(self):
