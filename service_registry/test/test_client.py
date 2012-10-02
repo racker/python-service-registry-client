@@ -45,10 +45,10 @@ class FarscapeClientTests(unittest.TestCase):
 
     @authenticate
     def test_create_session(self):
-        expected_keys = ['token']
+        response_body = {'token': '6bc8d050-f86a-11e1-a89e-ca2ffe480b20'}
         result = self.client.sessions.create(15)
 
-        self.assertEqual(result[0].keys(), expected_keys)
+        self.assertEqual(result[0], response_body)
         self.assertEqual(result[1], 'sessionId')
         self.assertTrue(isinstance(result[2], HeartBeater))
         self.assertEqual(result[2].heartbeat_interval, 12.0)
