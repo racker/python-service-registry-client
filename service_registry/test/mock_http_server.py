@@ -53,7 +53,8 @@ usage = 'usage: %prog --port=<port> --fixtures-dir=<fixtures directory>'
 parser = OptionParser(usage=usage)
 parser.add_option("--port", dest='port', default=8881,
                   help='Port to listen on', metavar='PORT')
-parser.add_option("--fixtures-dir", dest='fixtures_dir', default='fixtures/response/',
+parser.add_option("--fixtures-dir", dest='fixtures_dir',
+                  default='fixtures/response/',
                   help='The folder in which JSON fixtures for the tests live')
 
 (options, args) = parser.parse_args()

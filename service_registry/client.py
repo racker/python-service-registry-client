@@ -439,7 +439,7 @@ class ValidationError(Exception):
         self.details = details
 
     def __str__(self):
-        return ('<ValidationError type=%s, code=%s, txnId=%s, ' \
+        return ('<ValidationError type=%s, code=%s, txnId=%s, '
                 'message=%s, details=%s' %
                 (self.type, self.code, self.txnId, self.message, self.details))
 
