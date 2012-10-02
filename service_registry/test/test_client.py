@@ -17,6 +17,8 @@ import unittest
 
 from service_registry.client import Client, HeartBeater
 
+TOKENS = ['6bc8d050-f86a-11e1-a89e-ca2ffe480b20']
+
 
 class FarscapeClientTests(unittest.TestCase):
     def setUp(self):
@@ -45,7 +47,7 @@ class FarscapeClientTests(unittest.TestCase):
 
     @authenticate
     def test_create_session(self):
-        response_body = {'token': '6bc8d050-f86a-11e1-a89e-ca2ffe480b20'}
+        response_body = {'token': TOKENS[0]}
         result = self.client.sessions.create(15)
 
         self.assertEqual(result[0], response_body)
@@ -53,13 +55,13 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertTrue(isinstance(result[2], HeartBeater))
         self.assertEqual(result[2].heartbeat_interval, 12.0)
         self.assertEqual(result[2].heartbeat_timeout, 15)
-        self.assertEqual(result[2].next_token, '6bc8d050-f86a-11e1-a89e-ca2ffe480b20')
+        self.assertEqual(result[2].next_token, TOKENS[0])
 
     @authenticate
     def test_heartbeat_session(self):
         result = self.client.sessions.heartbeat('sessionId', 'someToken')
 
-        self.assertTrue('token' in result)
+        self.assertEqual(result, {'token': TOKENS[0]})
 
     @authenticate
     def test_create_service(self):
