@@ -11,7 +11,7 @@
         "count": 1,
         "limit": 1,
         "marker": null,
-        "next_marker": "dfw1-messenger",
-        "next_href": "https://todo.api.rackspacecloud.com/v1.0/7777/services?limit=1&marker=dfw1-messenger"
+        "next_marker": "dfw1-db1",
+        "next_href": "https://todo.api.rackspacecloud.com/v1.0/7777/services?limit=1&marker=dfw1-db1"
     }
 }

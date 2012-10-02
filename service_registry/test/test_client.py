@@ -19,6 +19,11 @@ from service_registry.client import Client, HeartBeater
 
 TOKENS = ['6bc8d050-f86a-11e1-a89e-ca2ffe480b20']
 
+EXPECTED_METADATA = \
+    {'region': 'dfw',
+     'port': '3306',
+     'ip': '127.0.0.1',
+     'version': '5.5.24-0ubuntu0.12.04.1 (Ubuntu)'}
 
 class FarscapeClientTests(unittest.TestCase):
     def setUp(self):
@@ -65,60 +70,44 @@ class FarscapeClientTests(unittest.TestCase):
 
     @authenticate
     def test_create_service(self):
-        result = self.client.services.create('sessionId', 'dfw1-messenger')
+        result = self.client.services.create('sessionId', 'dfw1-db1')
 
-        self.assertEqual(result, 'dfw1-messenger')
+        self.assertEqual(result, 'dfw1-db1')
 
     @authenticate
     def test_get_service(self):
-        expected_metadata = \
-            {'region': 'dfw',
-             'port': '5757',
-             'ip': '127.0.0.1'}
-
-        result = self.client.services.get('dfw1-messenger')
-
-        self.assertEqual(result['id'], 'dfw1-messenger')
+        result = self.client.services.get('dfw1-db1')
+        self.assertEqual(result['id'], 'dfw1-db1')
         self.assertEqual(result['session_id'], 'sessionId')
-        self.assertEqual(result['tags'], ['tag1', 'tag2', 'tag3'])
-        self.assertEqual(result['metadata'], expected_metadata)
+        self.assertEqual(result['tags'], ['db', 'mysql'])
+        self.assertEqual(result['metadata'], EXPECTED_METADATA)
 
     @authenticate
     def test_list_services(self):
-        expected_metadata = \
-            {'region': 'dfw',
-             'port': '5757',
-             'ip': '127.0.0.1'}
-
         result = self.client.services.list()
 
         self.assertEqual(result['values'][0]['id'], 'dfw1-api')
         self.assertEqual(result['values'][0]['session_id'], 'sessionId')
         self.assertTrue('tags' in result['values'][0])
         self.assertTrue('metadata' in result['values'][0])
-        self.assertEqual(result['values'][1]['id'], 'dfw1-messenger')
+        self.assertEqual(result['values'][1]['id'], 'dfw1-db1')
         self.assertEqual(result['values'][1]['session_id'], 'sessionId')
         self.assertEqual(result['values'][1]['tags'],
-                         ['tag1', 'tag2', 'tag3'])
+                         ['db', 'mysql'])
         self.assertEqual(result['values'][1]['metadata'],
-                         expected_metadata)
+                         EXPECTED_METADATA)
         self.assertTrue('metadata' in result)
 
     @authenticate
     def test_list_for_tag(self):
-        expected_metadata = \
-            {'region': 'dfw',
-             'port': '5757',
-             'ip': '127.0.0.1'}
+        result = self.client.services.list_for_tag('db')
 
-        result = self.client.services.list_for_tag('tag1')
-
-        self.assertEqual(result['values'][0]['id'], 'dfw1-messenger')
+        self.assertEqual(result['values'][0]['id'], 'dfw1-db1')
         self.assertEqual(result['values'][0]['session_id'], 'sessionId')
         self.assertEqual(result['values'][0]['tags'],
-                         ['tag1', 'tag2', 'tag3'])
+                         ['db', 'mysql'])
         self.assertEqual(result['values'][0]['metadata'],
-                         expected_metadata)
+                         EXPECTED_METADATA)
         self.assertTrue('metadata' in result)
 
     @authenticate

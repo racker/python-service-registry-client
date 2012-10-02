@@ -33,9 +33,9 @@ HTTP_GET_PATHS = {
     '/configuration/configId':
     {'fixture_path': 'configuration-configId-get.json'},
     '/services': {'fixture_path': 'services-get.json'},
-    '/services/dfw1-messenger':
-    {'fixture_path': 'services-dfw1-messenger-get.json'},
-    '/services?tag=tag1': {'fixture_path': 'services-tag-tag1-get.json'},
+    '/services/dfw1-db1':
+    {'fixture_path': 'services-dfw1-db1-get.json'},
+    '/services?tag=db': {'fixture_path': 'services-tag-db-get.json'},
 }
 
 HTTP_POST_PATHS = {
@@ -46,7 +46,7 @@ HTTP_POST_PATHS = {
     {'fixture_path': 'sessions-sessionId-heartbeat-post.json',
      'status_code': 200},
     '/services':
-    {'headers': {'Location': '127.0.0.1/v1.0/7777/services/dfw1-messenger'}}
+    {'headers': {'Location': '127.0.0.1/v1.0/7777/services/dfw1-db1'}}
 }
 
 usage = 'usage: %prog --port=<port> --fixtures-dir=<fixtures directory>'
@@ -95,7 +95,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             return self._end(status_code=204, headers=headers)
         elif 'services' in self.path:
             headers = \
-                {'Location': '127.0.0.1/v1.0/7777/services/dfw1-messenger'}
+                {'Location': '127.0.0.1/v1.0/7777/services/dfw1-db1'}
             return self._end(status_code=204, headers=headers)
 
     def do_DELETE(self):

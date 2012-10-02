@@ -1,4 +1,6 @@
 {
+    "id": "dfw1-db1",
+    "session_id": "sessionId",
     "tags": [
         "db",
         "mysql"
@@ -8,7 +10,5 @@
         "port": "3306",
         "ip": "127.0.0.1",
         "version": "5.5.24-0ubuntu0.12.04.1 (Ubuntu)"
-    },
-    "id": "dfw1-db1",
-    "session_id": "sessionId"
+    }
 }

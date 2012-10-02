@@ -5,27 +5,27 @@
             "timestamp": 1346967146370,
             "type": "service.join",
             "payload": {
-                "id": "dfw1-messenger",
+                "id": "dfw1-api",
                 "session_id": "sessionId",
-                "tags": [
-                    "tag1",
-                    "tag2",
-                    "tag3"
-                ],
-                "metadata": {
-                    "region": "dfw",
-                    "port": "5757",
-                    "ip": "127.0.0.1"
-                }
+                "tags": [],
+                "metadata": {}
             }
         },
         {
             "type": "service.join",
             "payload": {
-                "id": "dfw1-api",
+                "id": "dfw1-db1",
                 "session_id": "sessionId",
-                "tags": [],
-                "metadata": {}
+                "tags": [
+                    "db",
+                    "mysql"
+                ],
+                "metadata": {
+                    "region": "dfw",
+                    "port": "3306",
+                    "ip": "127.0.0.1",
+                    "version": "5.5.24-0ubuntu0.12.04.1 (Ubuntu)"
+                }
             }
         },
         {
