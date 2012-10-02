@@ -25,6 +25,7 @@ EXPECTED_METADATA = \
      'ip': '127.0.0.1',
      'version': '5.5.24-0ubuntu0.12.04.1 (Ubuntu)'}
 
+
 class FarscapeClientTests(unittest.TestCase):
     def setUp(self):
         self.client = Client('user',
