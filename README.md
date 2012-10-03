@@ -1,5 +1,5 @@
 
-A Twisted Python client for Rackspace Cloud Service Registry.
+A Python client for Rackspace Cloud Service Registry.
 
 # License
 
