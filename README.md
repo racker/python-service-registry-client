@@ -1,3 +1,4 @@
+# Python Service Registry client
 
 A Python client for Rackspace Cloud Service Registry.
 
