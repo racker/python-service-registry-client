@@ -85,7 +85,7 @@ List services for a specific tag:
 ```Python
 tag = 'tag'
 
-client.services.listForTag(tag)
+client.services.list_for_tag(tag)
 ```
 
 Get service by ID:
