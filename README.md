@@ -93,7 +93,7 @@ Get service by ID:
 ```Python
 service_id = 'messenger1'
 
-client.services.get(service_idd)
+client.services.get(service_id)
 ```
 
 Create a new service:
@@ -106,7 +106,7 @@ payload = {
     'metadata': {'someKey': 'someValue', 'anotherKey': 'anotherValue'}
 }
 
-client.services.register(session_id, service_idd, payload)
+client.services.register(session_id, service_id, payload)
 ```
 
 Update existing service:
