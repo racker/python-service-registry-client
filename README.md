@@ -160,5 +160,5 @@ client.configuration.remove(configuration_id)
 Get account limits:
 
 ```Python
-client.account.getLimits()
+client.account.get_limits()
 ```
