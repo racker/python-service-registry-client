@@ -15,11 +15,16 @@
 import os
 import sys
 
+from glob import glob
 from distutils.core import Command
+from unittest import TextTestRunner, TestLoader
 from setuptools import setup
 from subprocess import call
+from os.path import splitext, basename, join as pjoin
 
 from utils.dist import get_packages, get_data_files
+
+TEST_PATHS = ['service_registry/test']
 
 try:
     import epydoc
@@ -81,8 +86,10 @@ class TestCommand(Command):
     user_options = []
 
     def initialize_options(self):
-        this_dir = os.path.abspath(os.path.split(__file__)[0])
-        sys.path.insert(0, this_dir)
+        file_dir = os.path.abspath(os.path.split(__file__)[0])
+        sys.path.insert(0, file_dir)
+        for test_path in TEST_PATHS:
+            sys.path.insert(0, pjoin(file_dir, test_path))
         self._dir = os.getcwd()
 
     def finalize_options(self):
@@ -95,9 +102,18 @@ class TestCommand(Command):
 
     def run(self):
         self._run_mock_api_server()
-        cwd = os.getcwd()
-        retcode = call(('python %s/service_registry/test/test_client.py' % (cwd)).split(' '))
-        sys.exit(retcode)
+
+        testfiles = []
+        for test_path in TEST_PATHS:
+            for t in glob(pjoin(self._dir, test_path, 'test_*.py')):
+                testfiles.append('.'.join(
+                    [test_path.replace('/', '.'), splitext(basename(t))[0]]))
+
+        tests = TestLoader().loadTestsFromNames(testfiles)
+
+        t = TextTestRunner(verbosity=2)
+        res = t.run(tests)
+        return not res.wasSuccessful()
 
 
 setup(
