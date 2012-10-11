@@ -302,24 +302,22 @@ class ConfigurationClient(BaseClient):
         self.configuration_path = '/configuration'
 
     def list(self, marker=None, limit=None):
-        options = _get_options_object(marker=marker, limit=limit)
+        options = self._get_options_object(marker=marker, limit=limit)
         return self.request('GET', self.configuration_path, options=options)
 
-    def get(self, session_id):
-        path = '%s/%s' % (self.sessions_path, session_id)
-
+    def get(self, configuration_id):
+        path = '%s/%s' % (self.configuration_path, configuration_id)
         return self.request('GET', path)
 
-    def heartbeat(self, session_id, token):
-        path = '%s/%s/heartbeat' % (self.sessions_path, session_id)
-        payload = {'token': token}
-
-        return self.request('POST', path, payload=payload)
-
-    def update(self, session_id, payload):
-        path = '%s/%s' % (self.sessions_path, session_id)
+    def set(self, configuration_id, value):
+        path = '%s/%s' % (self.configuration_path, configuration_id)
+        payload = {'value': value}
 
         return self.request('PUT', path, payload=payload)
+
+    def remove(self, configuration_id):
+        path = '%s/%s' % (self.configuration_path, configuration_id)
+        return self.request('DELETE', path)
 
 
 class AccountClient(BaseClient):
