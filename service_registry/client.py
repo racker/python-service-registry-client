@@ -233,7 +233,6 @@ class ServicesClient(BaseClient):
 
     def list(self, marker=None, limit=None):
         options = self._get_options_object(marker=marker, limit=limit)
-        print options
         return self.request('GET', self.services_path, options=options)
 
     def list_for_tag(self, tag, marker=None, limit=None):
