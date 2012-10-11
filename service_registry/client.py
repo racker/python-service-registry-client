@@ -65,6 +65,17 @@ class BaseClient(object):
     def get_id_from_url(self, url):
         return url.split('/')[-1]
 
+    def _get_options_object(self, marker=None, limit=None):
+        options = {}
+
+        if marker:
+            options['marker'] = marker
+
+        if limit:
+            options['limit'] = limit
+
+        return options
+
     def request(self, method, path, options=None, payload=None,
                 heartbeater=None, re_authenticate=False, retry_count=0):
         self.auth_headers = self._authenticate(force=re_authenticate)
@@ -180,10 +191,11 @@ class SessionsClient(BaseClient):
                             payload=payload,
                             heartbeater=heartbeater)
 
-    def list(self):
+    def list(self, marker=None, limit=None):
         path = self.sessions_path
+        options = self._get_options_object(marker=marker, limit=limit)
 
-        return self.request('GET', path)
+        return self.request('GET', path, options=options)
 
     def get(self, session_id):
         path = '%s/%s' % (self.sessions_path, session_id)
@@ -208,11 +220,8 @@ class EventsClient(BaseClient):
                                            api_key, region)
         self.events_path = '/events'
 
-    def list(self, marker=None):
-        options = None
-        if marker:
-            options = {'marker': marker}
-
+    def list(self, marker=None, limit=None):
+        options = self._get_options_object(marker=marker, limit=limit)
         return self.request('GET', self.events_path, options=options)
 
 
@@ -222,11 +231,14 @@ class ServicesClient(BaseClient):
                                              api_key, region)
         self.services_path = '/services'
 
-    def list(self):
-        return self.request('GET', self.services_path)
+    def list(self, marker=None, limit=None):
+        options = self._get_options_object(marker=marker, limit=limit)
+        print options
+        return self.request('GET', self.services_path, options=options)
 
-    def list_for_tag(self, tag):
-        options = {'tag': tag}
+    def list_for_tag(self, tag, marker=None, limit=None):
+        options = self._get_options_object(marker=marker, limit=limit)
+        options['tag'] = tag
 
         return self.request('GET', self.services_path, options=options)
 
@@ -290,24 +302,25 @@ class ConfigurationClient(BaseClient):
                                                   api_key, region)
         self.configuration_path = '/configuration'
 
-    def list(self):
-        return self.request('GET', self.configuration_path)
+    def list(self, marker=None, limit=None):
+        options = _get_options_object(marker=marker, limit=limit)
+        return self.request('GET', self.configuration_path, options=options)
 
-    def get(self, configuration_id):
-        path = '%s/%s' % (self.configuration_path, configuration_id)
+    def get(self, session_id):
+        path = '%s/%s' % (self.sessions_path, session_id)
 
         return self.request('GET', path)
 
-    def set(self, configuration_id, value):
-        path = '%s/%s' % (self.configuration_path, configuration_id)
-        payload = {'value': value}
+    def heartbeat(self, session_id, token):
+        path = '%s/%s/heartbeat' % (self.sessions_path, session_id)
+        payload = {'token': token}
+
+        return self.request('POST', path, payload=payload)
+
+    def update(self, session_id, payload):
+        path = '%s/%s' % (self.sessions_path, session_id)
 
         return self.request('PUT', path, payload=payload)
-
-    def remove(self, configuration_id):
-        path = '%s/%s' % (self.configuration_path, configuration_id)
-
-        return self.request('DELETE', path)
 
 
 class AccountClient(BaseClient):
