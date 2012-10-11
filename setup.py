@@ -81,7 +81,9 @@ class TestCommand(Command):
     user_options = []
 
     def initialize_options(self):
-        pass
+        this_dir = os.path.abspath(os.path.split(__file__)[0])
+        sys.path.insert(0, this_dir)
+        self._dir = os.getcwd()
 
     def finalize_options(self):
         pass
