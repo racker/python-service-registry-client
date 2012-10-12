@@ -145,5 +145,85 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertEqual(result['id'], 'configId')
         self.assertEqual(result['value'], 'test value 123456')
 
+    @mock.patch("service_registry.client.BaseClient.request")
+    def _marker_assertion(self, path, request):
+        client = getattr(self.client, path.strip('/'))
+        client.list(marker='someMarker')
+        request.assert_called_with('GET', path,
+                                   options={'marker': 'someMarker'})
+
+    @mock.patch("service_registry.client.BaseClient.request")
+    def _limit_assertion(self, path, request):
+        client = getattr(self.client, path.strip('/'))
+        client.list(limit=3)
+        request.assert_called_with('GET', path, options={'limit': 3})
+
+    @mock.patch("service_registry.client.BaseClient.request")
+    def _marker_and_limit_assertion(self, path, request):
+        client = getattr(self.client, path.strip('/'))
+        client.list(marker='someMarker', limit=3)
+        request.assert_called_with('GET', path,
+                                   options={'marker': 'someMarker',
+                                            'limit': 3})
+
+    def test_list_services_with_marker_calls_request_with_marker(self):
+        return self._marker_assertion('/services')
+
+    def test_list_sessions_with_marker_calls_request_with_marker(self):
+        return self._marker_assertion('/sessions')
+
+    def test_list_events_with_marker_calls_request_with_marker(self):
+        return self._marker_assertion('/events')
+
+    def test_list_configuration_with_marker_calls_request_with_marker(self):
+        return self._marker_assertion('/configuration')
+
+    def test_list_services_with_limit_calls_request_with_limit(self):
+        return self._limit_assertion('/services')
+
+    def test_list_sessions_with_limit_calls_request_with_limit(self):
+        return self._limit_assertion('/sessions')
+
+    def test_list_events_with_limit_calls_request_with_limit(self):
+        return self._limit_assertion('/events')
+
+    def test_list_configuration_with_limit_calls_request_with_limit(self):
+        return self._limit_assertion('/configuration')
+
+    def test_list_services_with_marker_and_limit(self):
+        return self._marker_and_limit_assertion('/services')
+
+    def test_list_sessions_request_with_marker_and_limit(self):
+        return self._marker_and_limit_assertion('/sessions')
+
+    def test_list_events_with_mark_and_limit(self):
+        return self._marker_and_limit_assertion('/events')
+
+    def test_list_configuration_with_marker_and_limit(self):
+        return self._marker_and_limit_assertion('/configuration')
+
+    @mock.patch("service_registry.client.BaseClient.request")
+    def test_list_for_tag_with_marker(self, request):
+        self.client.services.list_for_tag('someTag', marker='someMarker')
+        request.assert_called_with('GET', '/services',
+                                   options={'tag': 'someTag',
+                                            'marker': 'someMarker'})
+
+    @mock.patch("service_registry.client.BaseClient.request")
+    def test_list_for_tag_with_limit(self, request):
+        self.client.services.list_for_tag('someTag', limit=3)
+        request.assert_called_with('GET', '/services',
+                                   options={'tag': 'someTag',
+                                            'limit': 3})
+
+    @mock.patch("service_registry.client.BaseClient.request")
+    def test_list_for_tag_with_marker_and_limit(self, request):
+        self.client.services.list_for_tag('someTag', marker='someMarker',
+                                          limit=3)
+        request.assert_called_with('GET', '/services',
+                                   options={'tag': 'someTag',
+                                            'marker': 'someMarker',
+                                            'limit': 3})
+
 if __name__ == '__main__':
     unittest.main()
