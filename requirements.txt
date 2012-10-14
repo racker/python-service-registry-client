@@ -2,3 +2,4 @@ requests
 pep8
 apache-libcloud
 python-dateutil
+mock
