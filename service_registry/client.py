@@ -107,7 +107,7 @@ class BaseClient(object):
                 data = r.json
                 raise ValidationError(type=data['type'], code=data['code'],
                                       message=data['message'],
-                                      txnId=data['txnId'],
+                                      txnId=data.get('txnId', None),
                                       details=data['details'])
 
         if method == 'GET':
@@ -401,7 +401,7 @@ class ValidationError(Exception):
         self.type = type
         self.code = code
         self.message = message
-        self.txnId = txnId
+        self.txnId = txnId or 'unknown'
         self.details = details
 
     def __str__(self):
