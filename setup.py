@@ -144,7 +144,7 @@ setup(
     url='https://github.com/racker/python-service-registry-client',
     install_requires=[
         'python-dateutil == 2.1',
-        'requests == 0.14.1',
+        'requests == 1.1.0',
         'apache-libcloud == 0.11.4'
     ]
 )

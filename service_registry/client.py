@@ -104,7 +104,7 @@ class BaseClient(object):
 
         def _check_status_code(status_code, method):
             if status_code not in ACCEPTABLE_STATUS_CODES[method]:
-                data = r.json
+                data = r.json()
                 raise ValidationError(type=data['type'], code=data['code'],
                                       message=data['message'],
                                       txnId=data.get('txnId', None),
@@ -113,12 +113,17 @@ class BaseClient(object):
         if method == 'GET':
             _check_status_code(r.status_code, 'GET')
 
-            return r.json
+            return r.json()
         elif method == 'POST':
+            if int(r.headers.get('content-length', 0)) > 0:
+                data = r.json()
+            else:
+                data = None
+
             _check_status_code(r.status_code, 'POST')
 
             if 'heartbeat' in path:
-                return r.json
+                return data
 
             id_from_url = self.get_id_from_url(r.headers['location'])
 
@@ -126,9 +131,9 @@ class BaseClient(object):
                 return id_from_url
 
             heartbeater.session_id = id_from_url
-            heartbeater.next_token = r.json['token']
+            heartbeater.next_token = data['token']
 
-            return r.json, id_from_url, heartbeater
+            return data, id_from_url, heartbeater
         elif method == 'PUT':
             _check_status_code(r.status_code, 'PUT')
 
