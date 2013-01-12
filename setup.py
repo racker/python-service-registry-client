@@ -143,8 +143,8 @@ setup(
     license='Apache License (2.0)',
     url='https://github.com/racker/python-service-registry-client',
     install_requires=[
-        'python-dateutil >= 2.1',
-        'requests >= 0.14.1',
-        'apache-libcloud >= 0.11.3'
+        'python-dateutil = 2.1',
+        'requests = 0.14.1',
+        'apache-libcloud = 0.11.4'
     ]
 )
