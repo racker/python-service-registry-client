@@ -139,6 +139,20 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertTrue('metadata' in result)
 
     @authenticate
+    def test_list_configuration_for_namespace(self):
+        namespaces = ['/api/', '/api', 'api']
+
+        for namespace in namespaces:
+            kwargs = {'namespace': namespace}
+            result = self.client.configuration.list_for_namespace(**kwargs)
+
+            self.assertEqual(result['values'][0]['id'], '/api/key-1')
+            self.assertEqual(result['values'][0]['value'], 'test value 123456')
+            self.assertEqual(result['values'][1]['id'], '/api/key-2')
+            self.assertEqual(result['values'][1]['value'], 'test value 23456')
+            self.assertTrue('metadata' in result)
+
+    @authenticate
     def test_get_configuration(self):
         result = self.client.configuration.get('configId')
 

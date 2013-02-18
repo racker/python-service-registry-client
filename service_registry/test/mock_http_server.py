@@ -32,6 +32,8 @@ HTTP_GET_PATHS = {
     '/configuration': {'fixture_path': 'configuration-get.json'},
     '/configuration/configId':
     {'fixture_path': 'configuration-configId-get.json'},
+    '/configuration/api/':
+    {'fixture_path': 'configuration-api-get.json'},
     '/services': {'fixture_path': 'services-get.json'},
     '/services/dfw1-db1':
     {'fixture_path': 'services-dfw1-db1-get.json'},

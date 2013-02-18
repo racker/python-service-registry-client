@@ -33,6 +33,15 @@ except ImportError:
     has_epydoc = False
 
 
+def read_version_string():
+    version = None
+    sys.path.insert(0, os.path.join(os.getcwd()))
+    from service_registry import __version__
+    version = __version__
+    sys.path.pop(0)
+    return version
+
+
 # Commands based on Libcloud setup.py:
 # https://github.com/apache/libcloud/blob/trunk/setup.py
 
@@ -118,7 +127,7 @@ class TestCommand(Command):
 
 setup(
     name='service-registry',
-    version='0.1.6',
+    version=read_version_string(),
     description='Python client for Rackspace Service Registry.',
     author='Rackspace Hosting, Inc.',
     author_email='sr@rackspace.com',

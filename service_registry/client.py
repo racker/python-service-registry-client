@@ -310,6 +310,19 @@ class ConfigurationClient(BaseClient):
         options = self._get_options_object(marker=marker, limit=limit)
         return self.request('GET', self.configuration_path, options=options)
 
+    def list_for_namespace(self, namespace, marker=None, limit=None):
+        options = self._get_options_object(marker=marker, limit=limit)
+
+        if namespace[0] != '/':
+            namespace = '/%s' % (namespace)
+
+        if namespace[len(namespace) - 1] != '/':
+            namespace += '/'
+
+        path = '%s%s' % (self.configuration_path, namespace)
+
+        return self.request('GET', path, options=options)
+
     def get(self, configuration_id):
         path = '%s/%s' % (self.configuration_path, configuration_id)
         return self.request('GET', path)
