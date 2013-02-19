@@ -127,7 +127,7 @@ class TestCommand(Command):
 
 setup(
     name='service-registry',
-    version=read_version_string(),
+    version='0.1.8',
     description='Python client for Rackspace Service Registry.',
     author='Rackspace Hosting, Inc.',
     author_email='sr@rackspace.com',
