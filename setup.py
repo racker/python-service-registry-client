@@ -154,6 +154,6 @@ setup(
     install_requires=[
         'python-dateutil == 2.1',
         'requests == 1.1.0',
-        'apache-libcloud == 0.11.4'
+        'apache-libcloud == 0.12.1'
     ]
 )

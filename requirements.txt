@@ -1,5 +1,5 @@
 requests
 pep8
-apache-libcloud
+apache-libcloud==0.12.1
 python-dateutil
 mock
