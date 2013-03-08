@@ -13,25 +13,28 @@
 # limitations under the License.
 
 from copy import deepcopy
-try:
-        import simplejson as json
-except:
-        import json
+from time import mktime, sleep, time
 
-from dateutil import parser
+try:
+    import simplejson as json
+except:
+    import json
+
 import httplib
-from libcloud.common.types import InvalidCredsError, MalformedResponseError
-from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
 import random
 import requests
-from time import mktime, sleep, time
+
+from dateutil import parser
+
+from libcloud.common.types import InvalidCredsError, MalformedResponseError
+from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
 
 US_AUTH_URL = 'https://identity.api.rackspacecloud.com/v2.0/tokens'
 UK_AUTH_URL = 'https://lon.identity.api.rackspacecloud.com/v2.0/tokens'
 DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
                      'uk': UK_AUTH_URL}
 DEFAULT_API_URL = 'https://dfw.registry.api.rackspacecloud.com/v1.0/'
-MAX_HEARTBEAT_TIMEOUT = 30
+MAX_HEARTBEAT_TIMEOUT = 120
 MAX_401_RETRIES = 1
 
 
@@ -127,10 +130,7 @@ class BaseClient(object):
 
             id_from_url = self.get_id_from_url(r.headers['location'])
 
-            if 'services' in path:
-                return id_from_url
-
-            heartbeater.session_id = id_from_url
+            heartbeater.service_id = id_from_url
             heartbeater.next_token = data['token']
 
             return data, id_from_url, heartbeater
@@ -169,56 +169,6 @@ class BaseClient(object):
                                           ' try again.')
 
 
-class SessionsClient(BaseClient):
-    def __init__(self, base_url, username, api_key, region):
-        super(SessionsClient, self).__init__(base_url, username,
-                                             api_key, region)
-        self.sessions_path = '/sessions'
-        self.base_url = base_url
-        self.username = username
-        self.api_key = api_key
-        self.region = region
-
-    def create(self, heartbeat_timeout, payload=None):
-        path = self.sessions_path
-        payload = deepcopy(payload) if payload else {}
-        payload['heartbeat_timeout'] = heartbeat_timeout
-
-        heartbeater = HeartBeater(self.base_url,
-                                  self.username,
-                                  self.api_key,
-                                  self.region,
-                                  None,
-                                  heartbeat_timeout)
-
-        return self.request('POST',
-                            path,
-                            payload=payload,
-                            heartbeater=heartbeater)
-
-    def list(self, marker=None, limit=None):
-        path = self.sessions_path
-        options = self._get_options_object(marker=marker, limit=limit)
-
-        return self.request('GET', path, options=options)
-
-    def get(self, session_id):
-        path = '%s/%s' % (self.sessions_path, session_id)
-
-        return self.request('GET', path)
-
-    def heartbeat(self, session_id, token):
-        path = '%s/%s/heartbeat' % (self.sessions_path, session_id)
-        payload = {'token': token}
-
-        return self.request('POST', path, payload=payload)
-
-    def update(self, session_id, payload):
-        path = '%s/%s' % (self.sessions_path, session_id)
-
-        return self.request('PUT', path, payload=payload)
-
-
 class EventsClient(BaseClient):
     def __init__(self, base_url, username, api_key, region):
         super(EventsClient, self).__init__(base_url, username,
@@ -251,12 +201,26 @@ class ServicesClient(BaseClient):
 
         return self.request('GET', path)
 
-    def create(self, session_id, service_id, payload=None):
+    def create(self, service_id, heartbeat_timeout, payload=None):
         payload = deepcopy(payload) if payload else {}
-        payload['session_id'] = session_id
         payload['id'] = service_id
+        payload['heartbeat_timeout'] = heartbeat_timeout
 
-        return self.request('POST', self.services_path, payload=payload)
+        heartbeater = HeartBeater(self.base_url,
+                                  self.username,
+                                  self.api_key,
+                                  self.region,
+                                  None,
+                                  heartbeat_timeout)
+
+        return self.request('POST', self.services_path, payload=payload,
+                            heartbeater=heartbeater)
+
+    def heartbeat(self, service_id, token):
+        path = '%s/%s/heartbeat' % (self.services_path, service_id)
+        payload = {'token': token}
+
+        return self.request('POST', path, payload=payload)
 
     def update(self, service_id, payload):
         path = '%s/%s' % (self.services_path, service_id)
@@ -350,7 +314,7 @@ class AccountClient(BaseClient):
 
 class HeartBeater(BaseClient):
     def __init__(self, base_url, username, api_key, region,
-                 session_id, heartbeat_timeout):
+                 service_id, heartbeat_timeout):
         """
         HeartBeater will start heartbeating a session once start() is called,
         and stop heartbeating the session when stop() is called.
@@ -361,14 +325,14 @@ class HeartBeater(BaseClient):
         @type username: C{str}
         @param api_key: Rackspace API key.
         @type api_key: C{str}
-        @param session_id: The ID of the session to heartbeat.
-        @type session_id: C{str}
+        @param service_id: The ID of the service to heartbeat.
+        @type service_id: C{str}
         @param heartbeat_timeout: The amount of time after which a session will
         time out if a heartbeat is not received.
         @type heartbeat_timeout: C{int}
         """
         super(HeartBeater, self).__init__(base_url, username, api_key, region)
-        self.session_id = session_id
+        self.service_id = service_id
         self.heartbeat_timeout = heartbeat_timeout
         self.heartbeat_interval = self._calculate_interval(heartbeat_timeout)
         self.next_token = None
@@ -376,12 +340,12 @@ class HeartBeater(BaseClient):
 
     def _calculate_interval(self, heartbeat_timeout):
         if heartbeat_timeout < 15:
-            return heartbeat_timeout * 0.6
+            return (heartbeat_timeout * 0.6)
         else:
-            return heartbeat_timeout * 0.8
+            return (heartbeat_timeout * 0.8)
 
     def _start_heartbeating(self):
-        path = '/sessions/%s/heartbeat' % self.session_id
+        path = '/services/%s/heartbeat' % (self.service_id)
         payload = {'token': self.next_token}
 
         if self._stopped:
@@ -390,12 +354,11 @@ class HeartBeater(BaseClient):
         interval = self.heartbeat_interval
 
         if interval > 5:
-            interval = interval + random.randrange(-3, 1)
+            interval = (interval + random.randrange(-3, 1))
 
         sleep(interval)
 
         result = self.request('POST', path, payload=payload)
-
         self.next_token = result['token']
 
         self._start_heartbeating()
@@ -458,12 +421,11 @@ class Client(object):
         self.api_key = api_key
         self.base_url = base_url
         self.region = region
-        self.sessions = SessionsClient(self.base_url, self.username,
+
+        self.services = ServicesClient(self.base_url, self.username,
                                        self.api_key, self.region)
         self.events = EventsClient(self.base_url, self.username,
                                    self.api_key, self.region)
-        self.services = ServicesClient(self.base_url, self.username,
-                                       self.api_key, self.region)
         self.configuration = ConfigurationClient(self.base_url,
                                                  self.username,
                                                  self.api_key,
