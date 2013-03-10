@@ -133,7 +133,7 @@ class BaseClient(object):
             heartbeater.service_id = id_from_url
             heartbeater.next_token = data['token']
 
-            return data, id_from_url, heartbeater
+            return data, heartbeater
         elif method == 'PUT':
             _check_status_code(r.status_code, 'PUT')
 
