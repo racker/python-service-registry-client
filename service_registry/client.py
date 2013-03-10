@@ -232,7 +232,8 @@ class ServicesClient(BaseClient):
 
         return self.request('DELETE', path)
 
-    def register(self, session_id, service_id, payload=None, retry_delay=2):
+    def register(self, service_id, heartbeat_timeout, payload=None,
+                 retry_delay=2):
         retry_count = MAX_HEARTBEAT_TIMEOUT / retry_delay
         success = False
         retry_counter = 0
@@ -246,7 +247,9 @@ class ServicesClient(BaseClient):
             elif (not success) and (retry_counter == retry_count):
                 return last_err
             try:
-                result = self.create(session_id, service_id, payload)
+                result = self.create(service_id=service_id,
+                                     heartbeat_timeout=heartbeat_timeout,
+                                     payload=payload)
                 success = True
 
                 return do_register(success, result, retry_counter, last_err)
@@ -316,8 +319,8 @@ class HeartBeater(BaseClient):
     def __init__(self, base_url, username, api_key, region,
                  service_id, heartbeat_timeout):
         """
-        HeartBeater will start heartbeating a session once start() is called,
-        and stop heartbeating the session when stop() is called.
+        HeartBeater will start heartbeating a service once start() is called,
+        and stop heartbeating it when stop() is called.
 
         @param base_url:  The base Cloud Registry URL.
         @type base_url: C{str}
@@ -327,7 +330,7 @@ class HeartBeater(BaseClient):
         @type api_key: C{str}
         @param service_id: The ID of the service to heartbeat.
         @type service_id: C{str}
-        @param heartbeat_timeout: The amount of time after which a session will
+        @param heartbeat_timeout: The amount of time after which a service will
         time out if a heartbeat is not received.
         @type heartbeat_timeout: C{int}
         """
@@ -365,14 +368,14 @@ class HeartBeater(BaseClient):
 
     def start(self):
         """
-        Start heartbeating the session. Will continue to heartbeat
+        Start heartbeating the service. Will continue to heartbeat
         until stop() is called.
         """
         return self._start_heartbeating()
 
     def stop(self):
         """
-        Stop heartbeating the session.
+        Stop heartbeating the service.
         """
         self._stopped = True
 
