@@ -1,4 +1,4 @@
-# Copyright 2012 Rackspace Hosting, Inc.
+# Copyright 2013 Rackspace Hosting, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,161 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+__all__ = [
+    'Client',
+    'ServicesClient',
+    'EventsClient',
+    'ConfigurationClient',
+    'AccountClient'
+]
+
 from copy import deepcopy
-from time import mktime, sleep, time
+from time import sleep
 
-try:
-    import simplejson as json
-except:
-    import json
-
-import httplib
-import random
-import requests
-
-from dateutil import parser
-
-from libcloud.common.types import InvalidCredsError, MalformedResponseError
-from libcloud.compute.drivers.rackspace import RackspaceNodeDriver
-
-US_AUTH_URL = 'https://identity.api.rackspacecloud.com/v2.0/tokens'
-UK_AUTH_URL = 'https://lon.identity.api.rackspacecloud.com/v2.0/tokens'
-DEFAULT_AUTH_URLS = {'us': US_AUTH_URL,
-                     'uk': UK_AUTH_URL}
-DEFAULT_API_URL = 'https://dfw.registry.api.rackspacecloud.com/v1.0/'
-MAX_HEARTBEAT_TIMEOUT = 120
-MAX_401_RETRIES = 1
-
-
-ACCEPTABLE_STATUS_CODES = {'GET': (httplib.OK,),
-                           'POST': (httplib.OK, httplib.CREATED),
-                           'PUT': (httplib.NO_CONTENT,),
-                           'DELETE': (httplib.NO_CONTENT,)}
-
-
-class BaseClient(object):
-    def __init__(self, base_url, username, api_key, region):
-        self.base_url = base_url
-        self.username = username
-        self.api_key = api_key
-        self.auth_headers = None
-        self.auth_token_expires = None
-        self.region = region
-
-        valid_regions = DEFAULT_AUTH_URLS.keys()
-        if region not in valid_regions:
-            raise ValueError('Invalid region %s. Valid regions are: %s' % (
-                             region, ', '.join(valid_regions)))
-
-        auth_url = DEFAULT_AUTH_URLS[region]
-
-        if not auth_url.endswith('/'):
-            auth_url += '/'
-
-        self.auth_url = auth_url
-
-    def get_id_from_url(self, url):
-        return url.split('/')[-1]
-
-    def _get_options_object(self, marker=None, limit=None):
-        options = {}
-
-        if marker:
-            options['marker'] = marker
-
-        if limit:
-            options['limit'] = limit
-
-        return options
-
-    def request(self, method, path, options=None, payload=None,
-                heartbeater=None, re_authenticate=False, retry_count=0):
-        self.auth_headers = self._authenticate(force=re_authenticate)
-        tenant_id = self.auth_headers['X-Tenant-Id']
-        request_url = self.base_url + tenant_id + path
-
-        if method not in ['GET', 'POST', 'PUT', 'DELETE']:
-            raise ValueError('Invalid method: %s' % (method))
-
-        data = json.dumps(payload) if payload else None
-        request_kwargs = {'method': method.lower(), 'url': request_url,
-                          'headers': self.auth_headers, 'params': options,
-                          'data': data}
-
-        if retry_count < MAX_401_RETRIES:
-            retry_count += 1
-            r = requests.request(**request_kwargs)
-
-            if r.status_code == httplib.UNAUTHORIZED:
-                return self.request(method=method, path=path, options=options,
-                                    payload=payload, heartbeater=heartbeater,
-                                    re_authenticate=True,
-                                    retry_count=retry_count)
-        else:
-            raise APIError('API returned 401')
-
-        def _check_status_code(status_code, method):
-            if status_code not in ACCEPTABLE_STATUS_CODES[method]:
-                data = r.json()
-                raise ValidationError(type=data['type'], code=data['code'],
-                                      message=data['message'],
-                                      txnId=data.get('txnId', None),
-                                      details=data['details'])
-
-        if method == 'GET':
-            _check_status_code(r.status_code, 'GET')
-
-            return r.json()
-        elif method == 'POST':
-            if int(r.headers.get('content-length', 0)) > 0:
-                data = r.json()
-            else:
-                data = None
-
-            _check_status_code(r.status_code, 'POST')
-
-            if 'heartbeat' in path:
-                return data
-
-            id_from_url = self.get_id_from_url(r.headers['location'])
-
-            heartbeater.service_id = id_from_url
-            heartbeater.next_token = data['token']
-
-            return data, heartbeater
-        elif method == 'PUT':
-            _check_status_code(r.status_code, 'PUT')
-
-            return True
-        elif method == 'DELETE':
-            _check_status_code(r.status_code, 'DELETE')
-
-            return True
-
-    def _authenticate(self, force=False):
-        if self.auth_headers:
-            current_time = time()
-            if not force and (self.auth_token_expires and
-                             (self.auth_token_expires < current_time)):
-                return self.auth_headers
-        try:
-            driver = RackspaceNodeDriver(self.username, self.api_key,
-                                         ex_force_auth_url=self.auth_url,
-                                         ex_force_auth_version='2.0',
-                                         ex_force_service_region=self.region)
-            driver.connection._populate_hosts_and_request_paths()
-            auth_token = driver.connection.auth_token
-            tenant_id = driver.connection.request_path.split('/')[-1]
-            expires = driver.connection.auth_token_expires
-            expires_datetime = parser.parse(expires)
-            self.auth_token_expires = \
-                mktime(expires_datetime.timetuple())
-            return {'X-Auth-Token': auth_token,
-                    'X-Tenant-Id': tenant_id}
-        except (InvalidCredsError, MalformedResponseError):
-            raise InvalidCredentialsError('The username or password you'
-                                          ' entered is incorrect. Please'
-                                          ' try again.')
+from constants import DEFAULT_API_URL, MAX_HEARTBEAT_TIMEOUT
+from base import BaseClient
+from heartbeater import HeartBeater
+from errors import ValidationError
 
 
 class EventsClient(BaseClient):
@@ -313,95 +173,6 @@ class AccountClient(BaseClient):
 
     def get_limits(self):
         return self.request('GET', self.limits_path)
-
-
-class HeartBeater(BaseClient):
-    def __init__(self, base_url, username, api_key, region,
-                 service_id, heartbeat_timeout):
-        """
-        HeartBeater will start heartbeating a service once start() is called,
-        and stop heartbeating it when stop() is called.
-
-        @param base_url:  The base Cloud Registry URL.
-        @type base_url: C{str}
-        @param username: Rackspace username.
-        @type username: C{str}
-        @param api_key: Rackspace API key.
-        @type api_key: C{str}
-        @param service_id: The ID of the service to heartbeat.
-        @type service_id: C{str}
-        @param heartbeat_timeout: The amount of time after which a service will
-        time out if a heartbeat is not received.
-        @type heartbeat_timeout: C{int}
-        """
-        super(HeartBeater, self).__init__(base_url, username, api_key, region)
-        self.service_id = service_id
-        self.heartbeat_timeout = heartbeat_timeout
-        self.heartbeat_interval = self._calculate_interval(heartbeat_timeout)
-        self.next_token = None
-        self._stopped = False
-
-    def _calculate_interval(self, heartbeat_timeout):
-        if heartbeat_timeout < 15:
-            return (heartbeat_timeout * 0.6)
-        else:
-            return (heartbeat_timeout * 0.8)
-
-    def _start_heartbeating(self):
-        path = '/services/%s/heartbeat' % (self.service_id)
-        payload = {'token': self.next_token}
-
-        if self._stopped:
-            return
-
-        interval = self.heartbeat_interval
-
-        if interval > 5:
-            interval = (interval + random.randrange(-3, 1))
-
-        sleep(interval)
-
-        result = self.request('POST', path, payload=payload)
-        self.next_token = result['token']
-
-        self._start_heartbeating()
-
-    def start(self):
-        """
-        Start heartbeating the service. Will continue to heartbeat
-        until stop() is called.
-        """
-        return self._start_heartbeating()
-
-    def stop(self):
-        """
-        Stop heartbeating the service.
-        """
-        self._stopped = True
-
-
-class ValidationError(Exception):
-    def __init__(self, type, code, message, txnId, details):
-        self.type = type
-        self.code = code
-        self.message = message
-        self.txnId = txnId or 'unknown'
-        self.details = details
-
-    def __str__(self):
-        return ('<ValidationError type=%s, code=%s, txnId=%s, '
-                'message=%s, details=%s' %
-                (self.type, self.code, self.txnId, self.message, self.details))
-
-    pass
-
-
-class APIError(Exception):
-    pass
-
-
-class InvalidCredentialsError(APIError):
-    pass
 
 
 class Client(object):

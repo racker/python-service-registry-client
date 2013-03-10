@@ -15,7 +15,8 @@
 import mock
 import unittest
 
-from service_registry.client import Client, HeartBeater
+from service_registry.client import Client
+from service_registry.heartbeater import HeartBeater
 
 TOKENS = ['6bc8d050-f86a-11e1-a89e-ca2ffe480b20']
 
