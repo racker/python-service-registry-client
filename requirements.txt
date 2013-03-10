@@ -1,4 +1,4 @@
-requests
+requests >= 1.0.0
 pep8
 apache-libcloud==0.12.1
 python-dateutil
