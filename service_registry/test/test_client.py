@@ -15,7 +15,8 @@
 import mock
 import unittest
 
-from service_registry.client import Client, HeartBeater
+from service_registry.client import Client
+from service_registry.heartbeater import HeartBeater
 
 TOKENS = ['6bc8d050-f86a-11e1-a89e-ca2ffe480b20']
 
@@ -52,34 +53,27 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertEqual(result, expected)
 
     @authenticate
-    def test_create_session(self):
+    def test_create_services(self):
         response_body = {'token': TOKENS[0]}
-        result = self.client.sessions.create(15)
+        result = self.client.services.create('dfw1-db1', 30)
 
         self.assertEqual(result[0], response_body)
-        self.assertEqual(result[1], 'sessionId')
-        self.assertTrue(isinstance(result[2], HeartBeater))
-        self.assertEqual(result[2].heartbeat_interval, 12.0)
-        self.assertEqual(result[2].heartbeat_timeout, 15)
-        self.assertEqual(result[2].next_token, TOKENS[0])
+        self.assertTrue(isinstance(result[1], HeartBeater))
+        self.assertEqual(result[1].heartbeat_interval, 24.0)
+        self.assertEqual(result[1].heartbeat_timeout, 30)
+        self.assertEqual(result[1].next_token, TOKENS[0])
 
     @authenticate
-    def test_heartbeat_session(self):
-        result = self.client.sessions.heartbeat('sessionId', 'someToken')
+    def test_heartbeat_service(self):
+        result = self.client.services.heartbeat('dfw1-db1', 'someToken')
 
         self.assertEqual(result, {'token': TOKENS[0]})
-
-    @authenticate
-    def test_create_service(self):
-        result = self.client.services.create('sessionId', 'dfw1-db1')
-
-        self.assertEqual(result, 'dfw1-db1')
 
     @authenticate
     def test_get_service(self):
         result = self.client.services.get('dfw1-db1')
         self.assertEqual(result['id'], 'dfw1-db1')
-        self.assertEqual(result['session_id'], 'sessionId')
+        self.assertEqual(result['heartbeat_timeout'], 30)
         self.assertEqual(result['tags'], ['db', 'mysql'])
         self.assertEqual(result['metadata'], EXPECTED_METADATA)
 
@@ -88,11 +82,10 @@ class FarscapeClientTests(unittest.TestCase):
         result = self.client.services.list()
 
         self.assertEqual(result['values'][0]['id'], 'dfw1-api')
-        self.assertEqual(result['values'][0]['session_id'], 'sessionId')
+        self.assertEqual(result['values'][0]['heartbeat_timeout'], 30)
         self.assertTrue('tags' in result['values'][0])
         self.assertTrue('metadata' in result['values'][0])
         self.assertEqual(result['values'][1]['id'], 'dfw1-db1')
-        self.assertEqual(result['values'][1]['session_id'], 'sessionId')
         self.assertEqual(result['values'][1]['tags'],
                          ['db', 'mysql'])
         self.assertEqual(result['values'][1]['metadata'],
@@ -104,31 +97,12 @@ class FarscapeClientTests(unittest.TestCase):
         result = self.client.services.list_for_tag('db')
 
         self.assertEqual(result['values'][0]['id'], 'dfw1-db1')
-        self.assertEqual(result['values'][0]['session_id'], 'sessionId')
+        self.assertEqual(result['values'][0]['heartbeat_timeout'], 30)
         self.assertEqual(result['values'][0]['tags'],
                          ['db', 'mysql'])
         self.assertEqual(result['values'][0]['metadata'],
                          EXPECTED_METADATA)
         self.assertTrue('metadata' in result)
-
-    @authenticate
-    def test_get_sessions(self):
-        result = self.client.sessions.list()
-
-        self.assertEqual(result['values'][0]['id'], 'sessionId')
-        self.assertEqual(result['values'][0]['heartbeat_timeout'], 30)
-        self.assertTrue('metadata' in result['values'][0])
-        self.assertTrue('last_seen' in result['values'][0])
-        self.assertTrue('metadata' in result)
-
-    @authenticate
-    def test_get_session(self):
-        result = self.client.sessions.get('sessionId')
-
-        self.assertEqual(result['id'], 'sessionId')
-        self.assertEqual(result['heartbeat_timeout'], 30)
-        self.assertTrue('metadata' in result)
-        self.assertTrue('last_seen' in result)
 
     @authenticate
     def test_list_configuration(self):
@@ -159,20 +133,20 @@ class FarscapeClientTests(unittest.TestCase):
         self.assertEqual(result['id'], 'configId')
         self.assertEqual(result['value'], 'test value 123456')
 
-    @mock.patch("service_registry.client.BaseClient.request")
+    @mock.patch('service_registry.client.BaseClient.request')
     def _marker_assertion(self, path, request):
         client = getattr(self.client, path.strip('/'))
         client.list(marker='someMarker')
         request.assert_called_with('GET', path,
                                    options={'marker': 'someMarker'})
 
-    @mock.patch("service_registry.client.BaseClient.request")
+    @mock.patch('service_registry.client.BaseClient.request')
     def _limit_assertion(self, path, request):
         client = getattr(self.client, path.strip('/'))
         client.list(limit=3)
         request.assert_called_with('GET', path, options={'limit': 3})
 
-    @mock.patch("service_registry.client.BaseClient.request")
+    @mock.patch('service_registry.client.BaseClient.request')
     def _marker_and_limit_assertion(self, path, request):
         client = getattr(self.client, path.strip('/'))
         client.list(marker='someMarker', limit=3)
@@ -183,9 +157,6 @@ class FarscapeClientTests(unittest.TestCase):
     def test_list_services_with_marker_calls_request_with_marker(self):
         return self._marker_assertion('/services')
 
-    def test_list_sessions_with_marker_calls_request_with_marker(self):
-        return self._marker_assertion('/sessions')
-
     def test_list_events_with_marker_calls_request_with_marker(self):
         return self._marker_assertion('/events')
 
@@ -195,9 +166,6 @@ class FarscapeClientTests(unittest.TestCase):
     def test_list_services_with_limit_calls_request_with_limit(self):
         return self._limit_assertion('/services')
 
-    def test_list_sessions_with_limit_calls_request_with_limit(self):
-        return self._limit_assertion('/sessions')
-
     def test_list_events_with_limit_calls_request_with_limit(self):
         return self._limit_assertion('/events')
 
@@ -206,9 +174,6 @@ class FarscapeClientTests(unittest.TestCase):
 
     def test_list_services_with_marker_and_limit(self):
         return self._marker_and_limit_assertion('/services')
-
-    def test_list_sessions_request_with_marker_and_limit(self):
-        return self._marker_and_limit_assertion('/sessions')
 
     def test_list_events_with_mark_and_limit(self):
         return self._marker_and_limit_assertion('/events')
@@ -223,14 +188,14 @@ class FarscapeClientTests(unittest.TestCase):
                                    options={'tag': 'someTag',
                                             'marker': 'someMarker'})
 
-    @mock.patch("service_registry.client.BaseClient.request")
+    @mock.patch('service_registry.client.BaseClient.request')
     def test_list_for_tag_with_limit(self, request):
         self.client.services.list_for_tag('someTag', limit=3)
         request.assert_called_with('GET', '/services',
                                    options={'tag': 'someTag',
                                             'limit': 3})
 
-    @mock.patch("service_registry.client.BaseClient.request")
+    @mock.patch('service_registry.client.BaseClient.request')
     def test_list_for_tag_with_marker_and_limit(self, request):
         self.client.services.list_for_tag('someTag', marker='someMarker',
                                           limit=3)
