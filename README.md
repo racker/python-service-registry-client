@@ -9,7 +9,7 @@ This library is distributed under the [Apache license](http://www.apache.org/lic
 # Usage
 
 ```Python
-from service_registry import Client
+from service_registry.client import Client
 
 RACKSPACE_USERNAME = 'username'
 RACKSPACE_KEY = 'api key'
